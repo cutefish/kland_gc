@@ -1,0 +1,11 @@
+work_dir:/lustre/medusa/bohong/geocorr
+temp_list_file:/t
+cont_list_file:/c
+channel_list_file:/ch
+special_channel:EHZ
+temp_npts:400
+cont_npts:8640000
+temp_tbefore:0.5
+temp_tafter:3.5
+snr_thr:5
+mad_ratio:9
