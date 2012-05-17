@@ -1,7 +1,7 @@
 namespace support {
 
-inline void throwError(bool is_success, int errno) {
-  if (is_success) {
+inline void throwError(bool is_fail, int errno) {
+  if (is_fail) {
     throw Exception(ErrorCode(errno, getErrorCategory<StdErrCategory>()));
   }
 }

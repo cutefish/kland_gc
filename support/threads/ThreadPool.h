@@ -12,12 +12,6 @@
 
 namespace support {
 
-/*! \callback UserThreadFunc
- *  \brief User defined thread function, will be called in while loop for each
- *  thread
- */
-typedef void (*UserThreadFunc)(ThreadPool* pool, int tid, void* args);
-
 /*! \class ThreadsAttr
  *  \brief Wrapper for pthread attributes
  */
@@ -49,8 +43,15 @@ class ThreadsAttr {
  */
 class ThreadPool {
  public:
+
+  /*! \callback UserThreadFunc
+   *  \brief User defined thread function, will be called in while loop for each
+   *  thread
+   */
+  typedef void (*UserThreadFunc)(ThreadPool* pool, int tid, void* args);
+
   /*** ctor/dtor ***/
-  ThreadPool(int num_threads, ThreadsAttr& attr); //To Do, wrap this attr
+  ThreadPool(int num_threads, ThreadsAttr& attr);
 
   ~ThreadPool();
 
@@ -76,6 +77,11 @@ class ThreadPool {
    */
   void exit();
 
+  /* join()
+   * join the pool threads
+   */
+  std::vector<void*> join();
+
  private:
   struct ThreadArgs {
     int tid;
@@ -83,9 +89,10 @@ class ThreadPool {
   };
 
   /*** member variables ***/
-  int m_num_threads;
+  int m_numThreads;
   volatile bool m_wait;                          //signal waiting
   volatile bool m_exit;                          //signal exit
+  bool m_joined;
   UserThreadFunc m_func;
   Barrier m_bar;                        //used by control thread to wait
   std::vector<pthread_t> m_threads;
@@ -93,7 +100,7 @@ class ThreadPool {
   std::vector<ThreadArgs> m_threadArgs;
 
   /*** private methods ***/
-  static void (*loop)(void*);
+  static void* loop(void*);
 
 
   //private copy and assignment ctor

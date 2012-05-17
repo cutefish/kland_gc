@@ -40,21 +40,15 @@ inline const ErrorCode& Exception ::code(void) const throw() {
 
 
 inline const char *Exception ::what(void) const throw() {
-  if(m_what.empty())
+  std::string m_what;
+  try
   {
-    try
-    {
-      m_what = this->std::runtime_error::what();
-      if(m_error_code)
-      {
-        if(!m_what.empty()) m_what += ": ";
-        m_what += m_error_code.message();
-      }
-    }
-    catch(...)
-    {
-      return std::runtime_error::what();
-    }
+    m_what = m_error_code.message();
+    m_what += this->std::runtime_error::what();
+  }
+  catch(...)
+  {
+    return std::runtime_error::what();
   }
 
   return m_what.c_str();

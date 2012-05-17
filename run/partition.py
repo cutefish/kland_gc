@@ -46,6 +46,9 @@ def _getNumLaunch(num_temp, num_cont, num_channel, temp_npts, cont_npts):
 
 #minimize the footprint of each launch
 def _partition(num_temp, num_cont, temp_npts, cont_npts, num_launch):
+    #this is not correct, needs to be modified
+    this is not correct, needs to be modified
+
     opt_point = math.sqrt(
         (num_temp * num_cont * cont_npts * temp_npts) / num_launch)
     if (num_temp * temp_npts < opt_point):

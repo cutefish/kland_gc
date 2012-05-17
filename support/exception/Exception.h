@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "system/ErrorCode.h"
+#include "ErrorCode.h"
 
 namespace support
 {
@@ -151,7 +151,6 @@ class Exception
      */
   private:
     ErrorCode          m_error_code;
-    mutable std::string m_what;
 
     /*! \endcond
      */

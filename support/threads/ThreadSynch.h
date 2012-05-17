@@ -75,7 +75,7 @@ class Semaphore {
 
   void post();
 
-  void getVale(int* p_val);
+  void getValue(int* p_val);
 
  private:
   sem_t m_sem;

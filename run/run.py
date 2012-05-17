@@ -51,7 +51,8 @@ def runWork(m_info, s_timestamp):
         log_root = '%s/log%s/%s' %(work_dir, s_timestamp, launch_id)
         pbs_setting = pbs.PBSOption()
         resources = 'nodes=%s:ppn=%s:gpus=%s,walltime=%s:00:00' %(
-            settings.nodes_per_launch, 1, gpus_per_node, node_time_lim)
+            settings.nodes_per_launch, settings.gpus_per_node,
+            settings.gpus_per_node, settings.node_time_lim)
         d_values = {
             'out_file': '%s/terminal_out' %log_root,
             'err_file': '%s/terminal_err' %log_root,
