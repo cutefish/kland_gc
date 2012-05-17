@@ -4,8 +4,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#include "support/exception/Exception.h"
-#include "support/exception/StdErrCategory.h"
+#include "support/Exception.h"
+#include "support/StdErrCategory.h"
 
 /*! \file ThreadSynch.h
  *  \brief Thread synchronization classes. 
@@ -114,6 +114,6 @@ class CondVar {
 
 } /* namespace support */
 
-#include "ThreadSynch.inl"
+#include "../lib/support/ThreadSynch.inl"
 
 #endif /* SUPPORT_THREADS_SYNCH_H_ */

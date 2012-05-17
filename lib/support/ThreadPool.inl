@@ -1,5 +1,5 @@
-#include "support/exception/Exception.h"
-#include "support/exception/StdErrCategory.h"
+#include "support/Exception.h"
+#include "support/StdErrCategory.h"
 
 namespace support {
 

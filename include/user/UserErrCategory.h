@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "support/exception/Exception.h"
-#include "support/exception/ErrorCode.h"
+#include "support/Exception.h"
+#include "support/ErrorCode.h"
 
 namespace usererr {
 

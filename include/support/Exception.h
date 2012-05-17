@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "ErrorCode.h"
+#include "support/ErrorCode.h"
 
 namespace support
 {
@@ -158,6 +158,6 @@ class Exception
 
 } /* namespace support */
 
-#include "Exception.inl"
+#include "../lib/support/Exception.inl"
 
 #endif /* SUPPORT_EXCEPTION_EXCEPTION_H_ */

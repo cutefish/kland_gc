@@ -170,6 +170,6 @@ inline bool operator!=(const ErrorCode &lhs, const ErrorCode &rhs);
 
 } /* namespace support */
 
-#include "ErrorCode.inl"
+#include "../lib/support/ErrorCode.inl"
 
 #endif /* SUPPORT_EXCEPTION_ERRORCODE_H_ */

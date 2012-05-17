@@ -1,7 +1,7 @@
 #include <cuda_runtime_api.h>
 
-#include "Runtime.h"
-#include "CudaErrCategory.h"
+#include "cuda/Runtime.h"
+#include "cuda/CudaErrCategory.h"
 #include "support/bad_alloc.h"
 
 namespace cuda {

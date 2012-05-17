@@ -1,9 +1,9 @@
 #include <fstream>
 #include <sstream>
 
-#include "Config.h"
-#include "UserErrCategory.h"
-#include "support/exception/Exception.h"
+#include "user/Config.h"
+#include "user/UserErrCategory.h"
+#include "support/Exception.h"
 #include "support/Type.h"
 
 /* splitString() */

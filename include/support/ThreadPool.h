@@ -4,7 +4,7 @@
 #include <vector>
 #include <pthread.h>
 
-#include "ThreadSynch.h"
+#include "support/ThreadSynch.h"
 
 /*! \file ThreadPool.h
  *  \brief Threads creation, exectuion and termination wrapper.
@@ -110,6 +110,6 @@ class ThreadPool {
 
 } /* namespace support */
 
-#include "ThreadPool.inl"
+#include "../lib/support/ThreadPool.inl"
 
 #endif /* SUPPORT_THREADS_THREADPOOL_H_ */

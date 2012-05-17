@@ -3,7 +3,7 @@
 
 #include <cuda_runtime_api.h>
 
-#include "support/exception/ErrorCode.h"
+#include "support/ErrorCode.h"
 
 namespace cudaerr {
 
