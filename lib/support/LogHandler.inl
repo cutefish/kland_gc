@@ -1,27 +1,26 @@
-#include <cerrno>
-
-#include "support/StdErrCategory.h"
-
 namespace support {
 
 namespace logging {
 
-inline StreamHandler::StreamHandler(std::ostream& out)
-    : m_out(out) {
-}
+StreamHandler::StreamHandler(std::ostream& out) : m_out(out) { }
 
-virtual inline void StreamHandler::handle(std::string message) {
+virtual void StreamHandler::handle(std::string message) {
   m_out << message;
 }
 
-inline FileHandler::FileHandler(std::string file_name) {
+FileHandler::FileHandler(const std::string file_name) {
+  m_out.open(file_name);
+  if (errno) {
+    throw Exception(errno, getErrorCategory<StdErrCategory>(),
+                    "LogFileHandler: " + file_name);
+  }
 }
 
-inline FileHandler::~FileHandler() {
+FileHandler::~FileHandler() {
   m_out.close();
 }
 
-virtual inline void FileHandler::handle(std::string message) {
+virtual void FileHandler::handle(std::string message) {
   m_out << message;
 }
 

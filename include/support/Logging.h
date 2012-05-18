@@ -34,6 +34,8 @@ Logger& getLogger(const std::string name);
 
 void rmLogger(const std::string name);
 
+void rmAllLoggers();
+
 /*! \class Logger
  *  \brief Objects of Logger class support five logging levels: DEBUG, INFO,
  *  WARNING, ERROR, CRITICAL. The default level is WARNING. Default logging
