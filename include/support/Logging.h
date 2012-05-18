@@ -11,36 +11,36 @@
  */
 
 #include <string>
+#include <vector>
 
 namespace support {
 
 namespace logging {
 
 enum Level {
-  DEBUG,
-  INFO,
-  WARNING,
-  ERROR,
-  CRITICAL
+  DEBUG = 0,
+  INFO = 1,
+  WARNING = 2,
+  ERROR = 3,
+  CRITICAL = 4
 };
 
 class Handler;
 class StreamHandler;
 class FileHandler;
 
-} /* namespace logging */
-
+/* getLogger()
+ * Return a Logger instance.
+ * Default level: WARNING
+ * Default handler: std::cout
+ * Multiple calls with the same name returns the same instance.
+ */
 Logger& getLogger(const std::string name);
-
-void rmLogger(const std::string name);
-
-void rmAllLoggers();
 
 /*! \class Logger
  *  \brief Objects of Logger class support five logging levels: DEBUG, INFO,
- *  WARNING, ERROR, CRITICAL. The default level is WARNING. Default logging
- *  outputs messages to standard error, however, output to file handler can be
- *  set. 
+ *  WARNING, ERROR, CRITICAL. Loggings with level under the setting will be
+ *  ignored.
  *  
  *  To Do
  *    Hierarchical structure loggers, that is, messages from the child
@@ -52,7 +52,6 @@ class Logger {
   /*** ctor/dtor ***/
   //no ctors. New loggers are created through gettor
   friend Logger& getLogger(const std::string name);
-  friend void rmLogger(const std::string name);
   
   /*** methods ***/
 
@@ -67,28 +66,31 @@ class Logger {
   void setLevel(const Level lvl);
 
   /* isEnabledFor() */
-  bool isEnabledFor(const Level lvl);
+  bool isEnabledFor(const Level lvl) const;
 
   /* getEffectiveLevel() */
-  Level getEffectiveLevel();
+  Level getEffectiveLevel() const;
 
   /* getChild() */
   //Logger getChild(const std::string& name);
 
   /* debug() */
-  void debug(const std::string& message);
+  void debug(const std::string& message) const;
 
   /* info() */
-  void info(const std::string& message);
+  void info(const std::string& message) const;
 
   /* warning() */
-  void warning(const std::string& message);
+  void warning(const std::string& message) const;
 
   /* error() */
-  void error(const std::string& message);
+  void error(const std::string& message) const;
+
+  /* critical() */
+  void critical(const std::string& message) const;
 
   /* log() */
-  void log(const Level lvl, const std::string& message);
+  void log(const Level lvl, const std::string& message) const;
 
   /* addFilter() */
   //void addFilter(const Filter& );
@@ -109,8 +111,13 @@ class Logger {
   Logger& operator=(const Logger& other);
   ~Logger();
 
-
+  /* member variable */
+  Level m_lvl;
+  std::vector<Handler&> m_handlers;
 };
+
+} /* namespace logging */
+
 
 } /* namespace support */
 

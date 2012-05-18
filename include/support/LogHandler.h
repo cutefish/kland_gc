@@ -1,6 +1,8 @@
 #ifndef SUPPORT_LOGHANDLER_H_
 #define SUPPORT_LOGHANDLER_H_
 
+#include "support/Logging.h"
+
 namespace support {
 
 namespace logging {
@@ -10,7 +12,18 @@ namespace logging {
  */
 class Handler {
  public:
-  virtual void handle(std::string message) = 0;
+  Handler();
+
+  virtual void emit(std::string message) = 0;
+
+  void setLevel(Level lvl);
+
+  Level getLevel(Level lvl) const;
+
+  bool isEnabledFor(Level lvl) const;
+
+ private:
+  Level m_lvl;
 };
 
 /*! \class StreamHandler
@@ -25,7 +38,7 @@ class StreamHandler : public Handler {
  public:
   StreamHandler(std::ostream& out);
 
-  virtual void handle(std::string message);
+  virtual void emit(std::string message);
 
  private:
   std::ostream& m_out;
@@ -40,7 +53,7 @@ class FileHandler : public Handler {
 
   ~FileHandler();
 
-  virtual void handle(std::string message);
+  virtual void emit(std::string message);
  private:
   std::ofstream m_out;
 };
