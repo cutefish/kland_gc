@@ -1,3 +1,5 @@
+ROOT = $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+
 DEBUG = -g
 CFLAGS = $(DEBUG) -Wall -O3 
 LIBS = -lpthread -lm -lrt
