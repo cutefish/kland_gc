@@ -10,10 +10,7 @@
  *
  */
 
-#include <map>
 #include <string>
-#include <ostream>
-#include <fstream>
 
 namespace support {
 
@@ -31,20 +28,29 @@ class Handler;
 class StreamHandler;
 class FileHandler;
 
+} /* namespace logging */
+
+Logger& getLogger(const std::string name);
+
+void rmLogger(const std::string name);
+
 /*! \class Logger
  *  \brief Objects of Logger class support five logging levels: DEBUG, INFO,
  *  WARNING, ERROR, CRITICAL. The default level is WARNING. Default logging
  *  outputs messages to standard error, however, output to file handler can be
- *  set. Loggers have a hierarchical structure, that is, messages from the child
+ *  set. 
+ *  
+ *  To Do
+ *    Hierarchical structure loggers, that is, messages from the child
  *  can be propagated to the parents.
+ *    Filter of logs
  */
 class Logger {
  public:
   /*** ctor/dtor ***/
   //no ctors. New loggers are created through gettor
-  static Logger& getLogger(std::string name);
-
-  static void rmLogger(std::string name);
+  friend Logger& getLogger(const std::string name);
+  friend void rmLogger(const std::string name);
   
   /*** methods ***/
 
@@ -95,14 +101,14 @@ class Logger {
   void removeHandler(const Handler& hdlr);
 
  private:
-  /* copy and assignment constructor */
+  /* ctors/dtor */
   Logger();
   Logger(const Logger& other);
   Logger& operator=(const Logger& other);
+  ~Logger();
+
 
 };
-
-} /* namespace logging */
 
 } /* namespace support */
 

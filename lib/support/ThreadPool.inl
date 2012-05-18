@@ -31,8 +31,8 @@ inline ThreadPool::ThreadPool(int num_threads, ThreadsAttr& attr)
     m_threadArgs[i].tid = i;
     m_threadArgs[i].pool = this;
 
-    int errno = pthread_create(&m_threads[i], attr.get(), &loop, &m_threadArgs[i]);
-    throwError(errno != 0, errno);
+    int error = pthread_create(&m_threads[i], attr.get(), &loop, &m_threadArgs[i]);
+    throwError(error != 0, error);
   }
 }
 
@@ -74,8 +74,8 @@ inline std::vector<void*> ThreadPool::join() {
   std::vector<void*> ret;
   for (int i = 0; i < m_numThreads; ++i) {
     ret.push_back(NULL);
-    int errno = pthread_join(m_threads[i], &ret[i]);
-    throwError(errno != 0, errno);
+    int error = pthread_join(m_threads[i], &ret[i]);
+    throwError(error != 0, error);
   }
   m_joined = true;
   return ret;
