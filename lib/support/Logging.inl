@@ -1,15 +1,15 @@
-#include <cerrno>
 #include <map>
 
-#include "support/StdErrCategory.h"
+#include <iostream>
 
+#include "support/StdErrCategory.h"
 
 namespace support {
 
 namespace logging {
 
 /* getLoggerMap() */
-std::map<std::string, Logger*> getLoggerMap() {
+inline std::map<std::string, Logger*>& getLoggerMap() {
   static std::map<std::string, Logger*> loggers;
   return loggers;
 }
@@ -21,13 +21,15 @@ std::map<std::string, Logger*> getLoggerMap() {
  * Considering there will be only a limited number of loggers
  * this memory leak will not cause serious trouble.
  */
-Logger& getLogger(const std::string name) {
+inline Logger& getLogger(const std::string name) {
   std::map<std::string, Logger*>& loggers = getLoggerMap();
   if (loggers.find(name) != loggers.end()) return *(loggers[name]);
-  loggers[name] = new Logger();
+  loggers[name] = new Logger(name);
+  return *(loggers[name]);
 }
 
-}
+/* ctors */
+inline Logger::Logger(std::string name) : m_name(name), m_lvl(WARNING) { } 
 
 /* setLevel() */
 inline void Logger::setLevel(const Level lvl) {
@@ -44,43 +46,54 @@ inline Level Logger::getEffectiveLevel() const {
 }
 
 inline void Logger::debug(const std::string& message) const {
-  log(DEBUG, message);
+  log(DEBUG, "[DEBUG]" + message);
 }
 
 inline void Logger::info(const std::string& message) const {
-  log(INFO, message);
+  log(INFO, "[INFO]" + message);
 }
 
 inline void Logger::warning(const std::string& message) const {
-  log(WARNING, message);
+  log(WARNING, "[WARNING]" + message);
 }
 
 inline void Logger::error(const std::string& message) const {
-  log(ERROR, message);
+  log(ERROR, "[ERROR]" + message);
 }
 
 inline void Logger::critical(const std::string& message) const {
-  log(CRITICAL, message);
+  log(CRITICAL, "[CRITICAL]" + message);
 }
 
 inline void Logger::log(const Level lvl, const std::string& message) const {
   if (!isEnabledFor(lvl)) return;
-  for (int i = 0; i < m_handlers.size(); ++i) {
-    if (m_handlers[i].isEnabledFor(lvl)) {
-      m_handlers[i].emit(message);
+  for (std::list<Handler*>::const_iterator it = m_handlers.begin();
+       it != m_handlers.end(); ++it) {
+    if ((*it)->isEnabledFor(lvl)) {
+      (*it)->emit(message);
     }
   }
 }
 
-inline void addHandler(const Handler& hdlr) {
-  m_handlers.push_back(hdlr);
+inline void Logger::addHandler(Handler& hdlr) {
+  m_handlers.push_back(&hdlr);
 }
 
-inline void removeHandler(const Handler& hdlr) {
-  m_handlers.erase(hdlr);
+inline void Logger::removeHandler(Handler& hdlr) {
+  m_handlers.remove(&hdlr);
 }
 
-inline Logger::Logger() : m_lvl(WARNING) { } 
+inline Logger::~Logger() {
+  //this is the end of the program
+  //we should destroy the handlers
+  for (std::list<Handler*>::iterator it = m_handlers.begin();
+       it != m_handlers.end(); ++it) {
+    if ((*it) != NULL) {
+      std::cout << "delete handler\n";
+      delete (*it);
+    }
+  }
+}
 
 } /* namespace logging */
 

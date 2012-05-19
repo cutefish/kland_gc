@@ -11,23 +11,15 @@
  */
 
 #include <string>
-#include <vector>
+#include <list>
+
+#include "support/LogHandler.h"
 
 namespace support {
 
 namespace logging {
 
-enum Level {
-  DEBUG = 0,
-  INFO = 1,
-  WARNING = 2,
-  ERROR = 3,
-  CRITICAL = 4
-};
-
-class Handler;
-class StreamHandler;
-class FileHandler;
+class Logger;
 
 /* getLogger()
  * Return a Logger instance.
@@ -50,9 +42,14 @@ Logger& getLogger(const std::string name);
 class Logger {
  public:
   /*** ctor/dtor ***/
-  //no ctors. New loggers are created through gettor
+  //No default ctors. New loggers are created through gettor Also since it does
+  //not make much sense to have multiple equvalent loggers, there is no copy and
+  //assignement constructor of Loggers. Loggers with the same name are the one
+  //same logger.
   friend Logger& getLogger(const std::string name);
-  
+
+  ~Logger();
+
   /*** methods ***/
 
   /* propagate()
@@ -99,26 +96,28 @@ class Logger {
   //void removeFilter()
 
   /* addHandler() */
-  void addHandler(const Handler& hdlr);
+  void addHandler(Handler& hdlr);
 
   /* removeHandler() */
-  void removeHandler(const Handler& hdlr);
+  void removeHandler(Handler& hdlr);
 
  private:
   /* ctors/dtor */
-  Logger();
+  Logger(std::string name);
   Logger(const Logger& other);
   Logger& operator=(const Logger& other);
-  ~Logger();
 
   /* member variable */
+  std::string m_name;
   Level m_lvl;
-  std::vector<Handler&> m_handlers;
+  std::list<Handler*> m_handlers;
 };
 
 } /* namespace logging */
 
 
 } /* namespace support */
+
+#include "../lib/support/Logging.inl"
 
 #endif /* SUPPORT_LOGGING_H_ */

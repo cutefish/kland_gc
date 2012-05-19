@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "user/Partition.h"
+#include "Works.h"
 
 std::list<TaskRange> genWorkList(int num_temp, int num_cont,
                                  int tseg_size, int cseg_size) {

@@ -1,8 +1,8 @@
 #include <fstream>
 #include <sstream>
 
-#include "user/Config.h"
-#include "user/UserErrCategory.h"
+#include "Config.h"
+#include "Category.h"
 #include "support/Exception.h"
 #include "support/Type.h"
 

@@ -67,6 +67,7 @@ template <typename Category>
 inline ErrorCode& ErrorCode::operator=(typename Category::type e) {
   m_val = e;
   m_cat = &getErrorCategory<Category>();
+  return *this;
 } // end ErrorCode::operator=()
 
 inline void ErrorCode::clear() {
@@ -91,7 +92,7 @@ inline ErrorCode::operator bool () const {
 } // end ErrorCode::operator bool()
 
 /* ErrorCode non-member function impl */
-bool operator<(const ErrorCode& lhs, const ErrorCode& rhs) {
+inline bool operator<(const ErrorCode& lhs, const ErrorCode& rhs) {
   bool result = lhs.category().operator<(rhs.category());
   result = result || lhs.category().operator==(rhs.category());
   result = result || lhs.value() < rhs.value();
@@ -104,11 +105,11 @@ std::basic_ostream<charT, traits>& operator<< (
   return os << ec.category().name() << ':' << ec.value();
 } // end operator<<()
 
-bool operator==(const ErrorCode& lhs, const ErrorCode& rhs) {
+inline bool operator==(const ErrorCode& lhs, const ErrorCode& rhs) {
   return lhs.category().operator==(rhs.category()) && lhs.value() == rhs.value();
 } // end operator==()
 
-bool operator!=(const ErrorCode& lhs, const ErrorCode& rhs) {
+inline bool operator!=(const ErrorCode& lhs, const ErrorCode& rhs) {
   return !(lhs == rhs);
 } // end operator!=()
 

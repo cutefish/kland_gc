@@ -9,11 +9,22 @@ RANLIB = ranlib
 LDFLAGS = 
 CC = gcc
 CXX = g++
+NVCC = nvcc
 
-KLAND_GC = kland_gc
-LIB_KLAND_GC = lib$(KLAND_GC)
+KLAND_GC = klgc
+LIB_AUX = lib$(KLAND_GC)aux
+
+LIB_DIR = $(ROOT)/lib
+INCLUDE_DIR = $(ROOT)/include
+BIN_DIR = $(ROOT)/bin
+KLGC_DIR = $(ROOT)/user
 
 LINKAGE = static
 ifeq ($(LINKAGE),static)
-TARGET = $(LIB_KLAND_GC).a
-LIB_DEP = 
+LIB_TARGET = $(LIB_AUX).a
+LIB_DEP = $(ROOT)/$(BIN_DIR)/$(LIB_TARGET)
+endif
+ifeq ($(LINKAGE),dynamic)
+LIB_TARGET = $(LIB_AUX).so
+LIB_DEP = $(ROOT)/$(BIN_DIR)/$(LIB_TARGET)
+endif
