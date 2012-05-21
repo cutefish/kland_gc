@@ -15,8 +15,6 @@
 
 #include "support/LogHandler.h"
 
-namespace support {
-
 namespace logging {
 
 class Logger;
@@ -24,7 +22,7 @@ class Logger;
 /* getLogger()
  * Return a Logger instance.
  * Default level: WARNING
- * Default handler: std::cout
+ * Default handler: None, need to be added by user
  * Multiple calls with the same name returns the same instance.
  */
 Logger& getLogger(const std::string name);
@@ -114,9 +112,6 @@ class Logger {
 };
 
 } /* namespace logging */
-
-
-} /* namespace support */
 
 #include "../lib/support/Logging.inl"
 

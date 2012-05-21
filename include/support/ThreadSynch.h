@@ -16,25 +16,40 @@
 
 namespace support {
 
+/*! \class Mutex
+ *  A support class for lock, this implementation of locks is expected to be
+ *  exception safe, that is, if a thread throws an exception, acquired mutex
+ *  will be unlocked.
+ */
+class Mutex {
+ public:
+  /*** ctor/dtor ***/
+  Mutex();
+  ~Mutex();
+  /*** gettor/settor ***/
+  pthread_mutex_t& get();
+ private:
+  pthread_mutex_t m_mtx;
+};
+
+
 /*! \class Lock
  */
 class Lock {
  public:
   /*** ctor/dtor ***/
-  Lock();
+  /* Lock()
+   * Acquires mutex
+   */
+  Lock(Mutex& m);
 
+  /* ~Lock()
+   * Release mutex
+   */
   ~Lock();
 
-  /*** methods ***/
-
-  /* acquire() */
-  void acquire();
-
-  /* release() */
-  void release();
-
  private:
-  pthread_mutex_t m_mtx;
+  pthread_mutex_t* m_pMtx;
 
   //private copy and assignment ctor
   Lock(const Lock& other);

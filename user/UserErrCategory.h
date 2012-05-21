@@ -12,6 +12,9 @@ namespace usererr {
 
 enum UserErrEnum {
   file_not_open,
+  sac_header_error,
+  sac_read_error,
+  sac_write_error,
   mpi_error,
 }; // end StdErrEnum
 
@@ -20,6 +23,9 @@ enum UserErrEnum {
 const std::string getErrString(int ev) {
   std::vector<std::string> errs;
   errs.push_back("User: File not open. ");
+  errs.push_back("User: SAC header read error. ");
+  errs.push_back("User: SAC data read error. ");
+  errs.push_back("User: SAC data write error. ");
   errs.push_back("User: MPI error. ");
 
   if (ev >= errs.size()) return "User: unknown_err";

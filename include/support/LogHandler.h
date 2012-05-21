@@ -1,7 +1,7 @@
 #ifndef SUPPORT_LOGHANDLER_H_
 #define SUPPORT_LOGHANDLER_H_
 
-namespace support {
+#include "support/ThreadSynch.h"
 
 namespace logging {
 
@@ -51,6 +51,7 @@ class Handler {
  private:
   Level m_lvl;
   std::ostream* m_out;
+  support::Mutex m_mtx;
 };
 
 /*! \class StreamHandler
@@ -66,18 +67,12 @@ class Handler {
 class StreamHandler : public Handler {
  public:
   /*** ctor/dtor ***/
-  /*create()
-   * ensure the handler lives long
-   */
-  static StreamHandler& create(std::ostream& out);
-
-  static void destroy(StreamHandler& hdlr);
+  StreamHandler(std::ostream& out);
 
   virtual ~StreamHandler();
 
  private:
   /*** private ctor ***/
-  StreamHandler(std::ostream& out);
   StreamHandler(const StreamHandler& other);
   StreamHandler& operator=(const StreamHandler& other);
 
@@ -89,13 +84,7 @@ class StreamHandler : public Handler {
 class FileHandler : public Handler {
  public:
   /*** ctor/dtor ***/
-  /* create()
-   * ensure the handler lives long
-   */
-  static FileHandler& create(std::string name);
-
-  /* destroy() */
-  static void destroy(FileHandler& hdlr);
+  FileHandler(const std::string file_name);
 
   virtual ~FileHandler();
 
@@ -103,7 +92,6 @@ class FileHandler : public Handler {
   std::string name() const;
  private:
   /*** private ctor ***/
-  FileHandler(const std::string file_name);
   FileHandler(const FileHandler& other);
   FileHandler& operator=(const FileHandler& other);
 
@@ -111,8 +99,6 @@ class FileHandler : public Handler {
 };
 
 } /* namespace logging */
-
-} /* namespace support */
 
 #include "../lib/support/LogHandler.inl"
 

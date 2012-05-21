@@ -4,67 +4,85 @@
 
 #include "support/StdErrCategory.h"
 
-namespace support {
-
 namespace logging {
 
-/* getLoggerMap() */
-inline std::map<std::string, Logger*>& getLoggerMap() {
-  static std::map<std::string, Logger*> loggers;
-  return loggers;
-}
+/*! \class LoggingMap
+ *  \brief The class is the set of loggers of the program. To give each loggers
+ *  a lifetime equal to the program, we have to destroy the loggers during
+ *  program termination, which is done by the destructor of this LoggingMap
+ *  class.
+ */
+class LoggingMap {
+ public:
+  /*** ctor/dtor ***/
+  //map destructor delete all loggers on heap
+  ~LoggingMap() {
+    for (std::map<std::string, Logger*>::iterator it = m_map.begin();
+         it != m_map.end(); ++it) {
+      delete (*it).second;
+    }
+  }
+
+  /*** gettor/settor ***/
+  std::map<std::string, Logger*>& map() { return m_map; }
+ private:
+  std::map<std::string, Logger*> m_map;
+};
 
 /* getLogger()
- *
- * N.B.
- * The loggers are never deleted until the program ends.
- * Considering there will be only a limited number of loggers
- * this memory leak will not cause serious trouble.
  */
 inline Logger& getLogger(const std::string name) {
-  std::map<std::string, Logger*>& loggers = getLoggerMap();
+  static LoggingMap the_map;
+  std::map<std::string, Logger*>& loggers = the_map.map();
   if (loggers.find(name) != loggers.end()) return *(loggers[name]);
   loggers[name] = new Logger(name);
   return *(loggers[name]);
 }
 
-/* ctors */
+/* Logger::ctors */
 inline Logger::Logger(std::string name) : m_name(name), m_lvl(WARNING) { } 
 
-/* setLevel() */
+/* Logger::setLevel() */
 inline void Logger::setLevel(const Level lvl) {
   m_lvl = lvl;
 }
 
-/* isEnabledFor() */
+/* Logger::isEnabledFor() */
 inline bool Logger::isEnabledFor(const Level lvl) const {
   return lvl >= m_lvl;
 }
 
+/* Logger::getEffectiveLevel() */
 inline Level Logger::getEffectiveLevel() const {
   return m_lvl;
 }
 
+/* Logger::debug() */
 inline void Logger::debug(const std::string& message) const {
   log(DEBUG, "[DEBUG]" + message);
 }
 
+/* Logger::info() */
 inline void Logger::info(const std::string& message) const {
   log(INFO, "[INFO]" + message);
 }
 
+/* Logger::warning() */
 inline void Logger::warning(const std::string& message) const {
   log(WARNING, "[WARNING]" + message);
 }
 
+/* Logger::error() */
 inline void Logger::error(const std::string& message) const {
   log(ERROR, "[ERROR]" + message);
 }
 
+/* Logger::critical() */
 inline void Logger::critical(const std::string& message) const {
   log(CRITICAL, "[CRITICAL]" + message);
 }
 
+/* Logger::log() */
 inline void Logger::log(const Level lvl, const std::string& message) const {
   if (!isEnabledFor(lvl)) return;
   for (std::list<Handler*>::const_iterator it = m_handlers.begin();
@@ -75,26 +93,17 @@ inline void Logger::log(const Level lvl, const std::string& message) const {
   }
 }
 
+/* Logger::addHandler() */
 inline void Logger::addHandler(Handler& hdlr) {
   m_handlers.push_back(&hdlr);
 }
 
+/* Logger::removeHandler() */
 inline void Logger::removeHandler(Handler& hdlr) {
   m_handlers.remove(&hdlr);
 }
 
 inline Logger::~Logger() {
-  //this is the end of the program
-  //we should destroy the handlers
-  for (std::list<Handler*>::iterator it = m_handlers.begin();
-       it != m_handlers.end(); ++it) {
-    if ((*it) != NULL) {
-      std::cout << "delete handler\n";
-      delete (*it);
-    }
-  }
 }
 
 } /* namespace logging */
-
-} /* namespace support */

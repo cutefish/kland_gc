@@ -6,25 +6,29 @@ inline void throwError(bool is_fail, int error) {
   }
 }
 
-/*** Lock ***/
-inline Lock::Lock() {
+/*** Mutex ***/
+inline Mutex::Mutex() {
   int error = pthread_mutex_init(&m_mtx, NULL);
   throwError(error != 0, error);
 }
 
-inline Lock::~Lock() {
+inline Mutex::~Mutex() {
   int error = pthread_mutex_destroy(&m_mtx);
   throwError(error != 0, error);
 }
 
-//acquire()
-inline void Lock::acquire() {
-  pthread_mutex_lock(&m_mtx);
+inline pthread_mutex_t& Mutex::get() {
+  return m_mtx;
 }
 
-//release()
-inline void Lock::release() {
-  pthread_mutex_unlock(&m_mtx);
+/*** Lock ***/
+inline Lock::Lock(Mutex& m) {
+  m_pMtx = &(m.get());
+  pthread_mutex_lock(m_pMtx);
+}
+
+inline Lock::~Lock() {
+  pthread_mutex_unlock(m_pMtx);
 }
 
 /*** Barrier ***/
@@ -47,7 +51,7 @@ inline void Barrier::wait() {
 
 /*** Semaphore ***/
 inline Semaphore::Semaphore(int value) {
-  int error = sem_init(&m_sem, NULL, value);
+  int error = sem_init(&m_sem, 0, value);
   throwError(error != 0, error);
 }
 
