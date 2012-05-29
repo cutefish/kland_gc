@@ -21,7 +21,7 @@ inline void synchronize(const char* message) {
   checkCall(error, std::string("synchronize: ") + message);
 }
 
-inline void* malloc(const size_t n, const char* message="") {
+inline void* malloc(const size_t n, const char* message) {
   void* ret = 0;
 
   cudaError_t error = cudaMalloc(reinterpret_cast<void**>(&ret), n);
@@ -32,8 +32,17 @@ inline void* malloc(const size_t n, const char* message="") {
          message).c_str());
 }
 
+inline void free(void* ptr, const char* message) {
+  cudaError_t error = cudaFree(ptr);
+  if (error) {
+    throw support::Exception(error, 
+                             getErrorCategory<CudaErrCategory>(),
+                             message);
+  }
+}
+
 inline void memcpyH2D(void* dst, const void* src, const size_t count,
-                      const char* message="") {
+                      const char* message) {
   cudaError_t error = cudaMemcpy(dst, src, count, cudaMemcpyHostToDevice);
   checkCall(error, std::string("memcpyH2D: ") + message);
 }
@@ -44,4 +53,15 @@ inline void memcpyD2H(void* dst, const void* src, const size_t count,
   checkCall(error, std::string("memcpyD2H: ") + message);
 }
 
+inline void memcpyD2D(void* dst, const void* src, const size_t count,
+                      const char* message="") {
+  cudaError_t error = cudaMemcpy(dst, src, count, cudaMemcpyDeviceToDevice);
+  checkCall(error, std::string("memcpyD2D: ") + message);
+}
+
+inline void memcpyH2H(void* dst, const void* src, const size_t count,
+                      const char* message="") {
+  cudaError_t error = cudaMemcpy(dst, src, count, cudaMemcpyHostToHost);
+  checkCall(error, std::string("memcpyH2H: ") + message);
+}
 } /* namespace cuda */
