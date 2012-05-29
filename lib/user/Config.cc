@@ -1,16 +1,16 @@
 #include <fstream>
 #include <sstream>
 
-#include "Config.h"
-#include "Category.h"
+#include "user/Config.h"
+#include "user/UserErrCategory.h"
 #include "support/Exception.h"
 #include "support/Type.h"
 
 /* splitString() */
 inline void splitString(std::string s, std::vector<std::string>& tokens,
                  char delim) {
-  stringstream ss(s);
-  string token;
+  std::stringstream ss(s);
+  std::string token;
   while(getline(ss, token, delim)) {
     if (token != "") tokens.push_back(token);
   }

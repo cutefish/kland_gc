@@ -1,9 +1,9 @@
 #include <cmath>
 
-#include "Config.h"
-#include "Hosts.h"
-#include "Works.h"
-#include "UserErrCategory.h"
+#include "user/Config.h"
+#include "user/Hosts.h"
+#include "user/Works.h"
+#include "user/UserErrCategory.h"
 #include "cuda/Runtime.h"
 #include "support/Type.h"
 

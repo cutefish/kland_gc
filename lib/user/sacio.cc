@@ -1,7 +1,7 @@
 #include "sacio.h"
 
 #include "support/Exception.h"
-#include "UserErrCategory.h"
+#include "user/UserErrCategory.h"
 
 /*** SacInput ***/
 
