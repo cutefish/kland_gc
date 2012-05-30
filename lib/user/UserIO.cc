@@ -30,13 +30,17 @@ void readTemplate(std::string path, Config cfg, float* data) {
 }
 
 /* readContinuous() */
-void readContinuous(std::string path, Config cfg, float* data) {
+size_t readContinuous(std::string path, Config cfg, float* data) {
   SacInput cont_sac(path);
   float delta = cont_sac.header().delta;
   float init_time = cont_sac.header().b;
   float final_time = cont_sac.header().e;
-  size_t bytes = cfg.cont_npts() * sizeof(float);
+  size_t npts = cont_sac.header().npts;
+  //choose the smaller 
+  npts = (npts > cfg.cont_npts()) ? cfg.cont_npts() : npts;
+  size_t bytes = npts * sizeof(float);
   cont_sac.read(data, 0, bytes);
+  return npts;
 }
 
 /* readSNR() */

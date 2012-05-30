@@ -6,12 +6,19 @@
 
 namespace cuda {
 
+/* getDeviceCount() */
 inline int getDeviceCount() {
   int count;
   checkCall(cudaGetDeviceCount(&count), "getDeviceCount");
   return count;
 }
 
+/* setDevice() */
+inline void setDevice(int rank) {
+  checkCall(cudaSetDevice(rank), "setDevice");
+}
+
+/* synchronize() */
 inline void synchronize(const char* message) {
 #if CUDART_VERSION >= 4000
   cudaError_t error = cudaDeviceSynchronize();
@@ -21,6 +28,7 @@ inline void synchronize(const char* message) {
   checkCall(error, std::string("synchronize: ") + message);
 }
 
+/* malloc() */
 inline void* malloc(const size_t n, const char* message) {
   void* ret = 0;
 
@@ -32,6 +40,7 @@ inline void* malloc(const size_t n, const char* message) {
          message).c_str());
 }
 
+/* free() */
 inline void free(void* ptr, const char* message) {
   cudaError_t error = cudaFree(ptr);
   if (error) {
@@ -41,11 +50,13 @@ inline void free(void* ptr, const char* message) {
   }
 }
 
+/* memcpy() */
 inline void memcpyH2D(void* dst, const void* src, const size_t count,
                       const char* message) {
   cudaError_t error = cudaMemcpy(dst, src, count, cudaMemcpyHostToDevice);
   checkCall(error, std::string("memcpyH2D: ") + message);
 }
+
 
 inline void memcpyD2H(void* dst, const void* src, const size_t count,
                       const char* message="") {

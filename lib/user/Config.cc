@@ -5,16 +5,7 @@
 #include "user/UserErrCategory.h"
 #include "support/Exception.h"
 #include "support/Type.h"
-
-/* splitString() */
-inline void splitString(std::string s, std::vector<std::string>& tokens,
-                 char delim) {
-  std::stringstream ss(s);
-  std::string token;
-  while(getline(ss, token, delim)) {
-    if (token != "") tokens.push_back(token);
-  }
-}
+#include "support/StringUtils.h"
 
 /* readList() */
 inline void readList(std::string list_file,
@@ -47,10 +38,14 @@ inline void Config::fill(std::string key, std::string value) {
     m_tempTbefore = support::String2Type<float>(value);
   else if (key == "temp_tafter")
     m_tempTafter = support::String2Type<float>(value);
+  else if (key == "snr_name")
+    m_snrName = value;
   else if (key == "snr_thr")
     m_snrThr = support::String2Type<float>(value);
   else if (key == "mad_ratio")
     m_madRatio = support::String2Type<float>(value);
+  else if (key == "num_chnlThr")
+    m_madRatio = support::String2Type<int>(value);
 }
 
 /* Config() */
@@ -64,9 +59,8 @@ inline Config::Config(std::string config_file,
 
   while(if_config.good()) {
     getline(if_config, line);
-    std::vector<std::string> tokens;
     if (line == "") continue;
-    splitString(line, tokens, ':');
+    std::vector<std::string> tokens = splitString(line, ':');
     fill(tokens[0], tokens[1])
   }
 
@@ -84,8 +78,30 @@ inline void Config::print(ostream& out) {
   out << "cont_npts: " << m_contNpts << '\n';
   out << "temp_tbefore: " << m_tempTbefore << '\n';
   out << "temp_tafter: " << m_tempTafter << '\n';
+  out << "snr_name: " << m_snrName << '\n';
   out << "snr_thr: " << m_snrThr << '\n';
   out << "mad_ratio: " << m_madRatio << '\n';
+  out << "num_chanlThr: " << m_madRatio << '\n';
   out << "log_root: " << m_logRoot << '\n';
   out << "out_root: " << m_outRoot << '\n';
 }
+
+/* getter */
+const std::vector<std::string>& temp_list() const { return  m_tempList; }
+const std::vector<std::string>& cont_list() const { return m_contList; }
+const std::vector<std::string>& channel_list() const { return m_channelList; }
+const std::string& special_channel() const { return m_specialChannel; }
+const int temp_npts() const { return m_tempNpts; }
+const int cont_npts() const { return m_contNpts; }
+const float temp_tbefore() const { return m_tempTbefore; }
+const float temp_tafter() const { return m_tempTafter; }
+const float sample_rate() const { 
+  return m_tempNpts / (m_tempTbefore + m_tempTafter); 
+}
+const std::string& snr_name() const { return m_snrName; }
+const float snr_thr() const { return m_snrThr; }
+const float mad_ratio() const { return m_madRatio; }
+const int mad_ratio() const { return m_madRatio; }
+const std::string& log_root() const { return m_logRoot; }
+const std::string& out_root() const { return m_outRoot; }
+

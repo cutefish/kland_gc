@@ -13,8 +13,9 @@ struct TempConfig {
 void readTemplate(std::string path, Config cfg, float* data);
 
 /* readContinuous()
+ * Read continuous and return actual size.
  */
-void readContinuous(std::string path, Config cfg, float* data);
+size_t readContinuous(std::string path, Config cfg, float* data);
 
 /* readSNR()
  */

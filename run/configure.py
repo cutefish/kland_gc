@@ -2,13 +2,6 @@
 configure.py
 
 Get useful information from config file
-Information includes
-Working directory
-The list file of template waveform directories;
-The list file of continuous waveform directories;
-The list file of channels;
-Number of points for each template file;
-Number of points for each continuous file;
 
 @method
 readConfigure() -- read configuration from a file or input
@@ -28,6 +21,7 @@ l_info = [
     'cont_npts',
     'temp_tbefore',
     'temp_tafter',
+    'snr_name',
     'snr_thr',
     'mad_ratio',
 ]

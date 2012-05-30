@@ -5,6 +5,8 @@ namespace cuda {
 
 int getDeviceCount();
 
+void setDevice(int rank);
+
 void synchronize(const char* message);
 
 void* malloc(const size_t n, const char* message="");
