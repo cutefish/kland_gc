@@ -38,11 +38,6 @@ void calcAndStackCorr(float* cont, float* temp,
  */
 float getMAD(float* data, unsigned size);
 
-struct ResultEntry {
-  float time;
-  float corr;
-};
-
 /* select()
  * Select points exceeds mad and output.
  */

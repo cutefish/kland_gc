@@ -23,6 +23,8 @@ class Config {
   const int cont_npts();
   const float temp_tbefore();
   const float temp_tafter();
+  const float sample_rate();
+  const std::string& snr_name();
   const float snr_thr();
   const float mad_ratio();
   const std::string& log_root();

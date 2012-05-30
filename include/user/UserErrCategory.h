@@ -16,6 +16,7 @@ enum UserErrEnum {
   sac_read_error,
   sac_write_error,
   mpi_error,
+  temp_invalid_start_time, 
 }; // end StdErrEnum
 
 } /* namespace errc */
@@ -27,6 +28,7 @@ const std::string getErrString(int ev) {
   errs.push_back("User: SAC data read error. ");
   errs.push_back("User: SAC data write error. ");
   errs.push_back("User: MPI error. ");
+  errs.push_back("User: Temp invalid start time. ");
 
   if (ev >= errs.size()) return "User: unknown_err";
   return errs[ev];
