@@ -14,8 +14,8 @@ import settings
 def getCmdStr(config_file, exec_file,
               out_root, log_root):
     l_ret = [
-        'mpirun %s -c %s -l %s -o %s\n' %(
-            launch_id, config_file, exec_file,
+        'mpirun %s %s %s %s\n' %(
+            exec_file, config_file,
             log_root, out_root),
         '\n',
         'PRGM_EXIT=$?\n',

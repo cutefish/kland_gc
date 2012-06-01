@@ -31,8 +31,8 @@ class Config {
   const std::string& log_root() const;
   const std::string& out_root() const;
 
-  /*** print ***/
-  void print(ostream& out);
+  /*** repr ***/
+  std::string repr();
 
  private:
   std::vector<std::string> m_tempList;

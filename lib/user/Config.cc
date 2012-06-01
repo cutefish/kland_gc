@@ -68,22 +68,26 @@ inline Config::Config(std::string config_file,
   m_outRoot = out_root;
 }
 
-/* print() */
-inline void Config::print(ostream& out) {
-  out << "Temp list size: " << m_tempList.size() << '\n';
-  out << "Cont list size: " << m_contList.size() << '\n';
-  out << "Channel list size: " << m_channelList.size() << '\n';
-  out << "Special channel: " << m_specialChannel << '\n';
-  out << "temp_npts: " << m_tempNpts << '\n';
-  out << "cont_npts: " << m_contNpts << '\n';
-  out << "temp_tbefore: " << m_tempTbefore << '\n';
-  out << "temp_tafter: " << m_tempTafter << '\n';
-  out << "snr_name: " << m_snrName << '\n';
-  out << "snr_thr: " << m_snrThr << '\n';
-  out << "mad_ratio: " << m_madRatio << '\n';
-  out << "num_chanlThr: " << m_madRatio << '\n';
-  out << "log_root: " << m_logRoot << '\n';
-  out << "out_root: " << m_outRoot << '\n';
+/* repr() */
+inline void Config::repr() {
+  stringstream ss;
+  ss << "Config: " << '\n';
+  ss << "Temp list size: " << m_tempList.size() << '\n';
+  ss << "Cont list size: " << m_contList.size() << '\n';
+  ss << "Channel list size: " << m_channelList.size() << '\n';
+  ss << "Special channel: " << m_specialChannel << '\n';
+  ss << "temp_npts: " << m_tempNpts << '\n';
+  ss << "cont_npts: " << m_contNpts << '\n';
+  ss << "temp_tbefore: " << m_tempTbefore << '\n';
+  ss << "temp_tafter: " << m_tempTafter << '\n';
+  ss << "snr_name: " << m_snrName << '\n';
+  ss << "snr_thr: " << m_snrThr << '\n';
+  ss << "mad_ratio: " << m_madRatio << '\n';
+  ss << "num_chanlThr: " << m_madRatio << '\n';
+  ss << "log_root: " << m_logRoot << '\n';
+  ss << "out_root: " << m_outRoot << '\n';
+  ss << '\n';
+  return ss.str();
 }
 
 /* getter */

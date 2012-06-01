@@ -1,4 +1,5 @@
 #include <cuda_runtime_api.h>
+#include <iomanip>
 #include <sstream>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>

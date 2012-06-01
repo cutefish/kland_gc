@@ -18,18 +18,28 @@ struct RunEnv {
   float* host_pTemp;
   int num_temps;
   cuda::DeviceProperties dev_prop;
-  support::TimingEventTable tevts;
 };
 
-/* initRunEnv()
- * initialize runtime environment. including:
+/* init()
+ * initialize runtime. including:
  *  initialize mpi
  *  initialize gpu card
  *  calculate and allocate memory.
  *  initialize logging utils
  *  initialize timing utils
  */
-RunEnv initRunEnv(int argc, char* argv[]);
+RunEnv init(Config cfg);
 
+/* finalize()
+ */
+void finalize(RunEnv env);
+
+/* doLeaderLoop()
+ */
+void doLeaderLoop(RunEnv env, Config cfg);
+
+/* doWorkerLoop()
+ */
+void doWorkerLoop(RunEnv env, Config cfg);
 
 #endif /* USER_HOSTS_H_ */

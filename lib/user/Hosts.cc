@@ -1,5 +1,6 @@
 #include <cmath>
 #include <string>
+#include <sys/stat.h>
 
 #include "user/Config.h"
 #include "user/Hosts.h"
@@ -10,6 +11,8 @@
 #include "support/Type.h"
 #include "support/Exception.h"
 #include "support/Logging.h"
+#include "support/Type.h"
+#include "support/StringUtils.h"
 
 enum MsgTags {
   WorkTag,
@@ -17,8 +20,15 @@ enum MsgTags {
   DoneTag,
 };
 
-/* initRunEnv() */
-RunEnv initRunEnv(Config cfg) {
+struct TaskRange {
+  temp_start;
+  temp_end;
+  cont_start;
+  cont_end;
+};
+
+/* init() */
+RunEnv init(Config cfg) {
   RunEnv env;
   //initialize mpi
   int errno = MPI_Init(NULL, NULL);
@@ -42,30 +52,105 @@ RunEnv initRunEnv(Config cfg) {
   env.dev_pCont = reinterpret_cast<float*>(cuda::malloc(req));
   env.dev_pContMean = reinterpret_cast<float*>(cuda::malloc(req));
   env.dev_pContVar = reinterpret_cast<float*>(cuda::malloc(req));
-  left = left - req * 4; // an extra for sorting
-  env.num_temps = left / 2 / req;
-  env.dev_pCorr = reinterpret_cast<float*>(cuda::malloc(env.num_temps * req));
+  env.dev_pCorr = reinterpret_cast<float*>(cuda::malloc(req));
+  left = left - req * 5; // an extra for sorting
+  env.num_temps = left / req;
   env.dev_pStack = reinterpret_cast<float*>(cuda::malloc(env.num_temps * req));
   ///host
   env.host_pCont = new float[cfg.cont_npts()];
   env.host_pTemp = new float[cfg.temp_npts()];
 
-  // initialize logging utils
-  support::Logger& user_log = support::getLogger("userLog");
-  support::Logger& perf_log = support::getLogger("perfLog");
+  //initialize logging utils
+  support::LogSys::init();
+  support::Logger& user_log = support::LogSys::newLogger("userLog");
+  support::Logger& perf_log = support::LogSys::newLogger("perfLog");
+  user_log.setLevel(support::DEBUG);
+  perf_log.setLevel(support::DEBUG);
   std::string log_path;
-  support::FileHandler* loghd;
   //log to <work_dir>/log_<timestamp>/<launch_id>/userLog<rank>
   log_path = cfg.log_root() + "/userLog" + support::Type2String<int>(env.rank);
-  support::FileHandler* user_loghd = new support::FileHandler(log_path);
-  user_log.addHandler(*user_loghd);
+  support::HandlerRef user_hdlr = support::FileHandler::create(log_path);
+  user_hdlr.setLevel(support::DEBUG);
+  user_log.addHandler(user_hdlr);
   //log to <work_dir>/log_<timestamp>/<launch_id>/perfLog<rank>
   log_path = cfg.log_root() + "/perfLog" + support::Type2String<int>(env.rank);
-  support::FileHandler* loghd = new support::FileHandler(log_path);
-  user_log.addHandler(*perf_loghd);
+  support::HandlerRef perf_hdlr = support::FileHandler::create(log_path);
+  perf_hdlr.setLevel(support::DEBUG);
+  user_log.addHandler(perf_hdlr);
 
+  //initialize timing utils
+  support::TimingSys::init();
+  support::TimingSys::newEvent("totalTime");
+  support::TimingSys::newEvent("readTemplate");
+  support::TimingSys::newEvent("calcTemplateMeanVar");
+  support::TimingSys::newEvent("readContinuous");
+  support::TimingSys::newEvent("calcContinuousMeanVar");
+  support::TimingSys::newEvent("calcCorr");
+  support::TimingSys::newEvent("stackCorr");
+  support::TimingSys::newEvent("calcMAD");
+  support::TimingSys::newEvent("select");
 
   return env;
+}
+
+/* finalize() */
+void finalize(RunEnv env) {
+  //finalize mpi
+  int errno = MPI_Finalize();
+  user::throwError(errno == MPI_SUCCESS, 
+                   usererr::mpi_error,
+                   "errorno: " + support::Type2String<int>(errno));
+  
+  //free pointers
+  cuda::free(env.dev_pCont);
+  cuda::free(env.dev_pContMean);
+  cuda::free(env.dev_pContVar);
+  cuda::free(env.dev_pCorr);
+  cuda::free(env.dev_pStack);
+  delete [] env.host_pCont;
+  delete [] env.host_pTemp;
+
+  //log performance stats
+  for (support::TimingSys::iterator it = support::TimingSys::begin();
+       it != support::TimingSys::end(); ++it) {
+    if ((*it).name() == "Total time")
+      support::LogSys::getLogger("perfLog").info(
+          "Total time: " + support::Time2String(
+              support::TimingSys::get("totalTime").tot_dur, "%TH:%Tm:%Ts\n\n"));
+    else
+      support::LogSys::getLogger("perfLog").info(
+          (*it).name + "\n" + 
+          "total: " + support::Time2String((*it).run_dur(), "%TH:%Tm:%Ts\n") + 
+          "ave: " + support::Time2String((*it).ave_dur(), "%Ti ms\n") + 
+          "num: " + (*it).num_pauses() + "\n\n";
+          );
+
+  }
+
+  //finalize logging
+  support::LogSys::finalize();
+
+  //finalize timing
+  support::TimingSys::finalize();
+}
+
+std::list<TaskRange> partition(int num_proc, int tseg_size, 
+                               int num_temp, int num_cont) {
+  int cseg_size = num_cont / num_proc;
+  std::list<TaskRange> ret;
+  for (int i = 0; i < num_temp; i += tseg_size) {
+    for (int j = 0; j < num_cont; j += cseg_size) {
+      TaskRange range;
+      range.temp_start = i;
+      range.temp_end = (i + tseg_size - 1 < num_temp - 1) ?
+          (i + tseg_size - 1) : (num_temp - 1);
+      range.cont_start = j;
+      range.cont_end = (j + cseg_size - 1 < num_cont - 1) ?
+          (j + cseg_size - 1) : (num_cont - 1);
+      ret.push_back(range);
+    }
+  }
+  return ret;
 }
 
 void doLeaderLoop(RunEnv env, Config cfg) {
@@ -73,10 +158,9 @@ void doLeaderLoop(RunEnv env, Config cfg) {
   int out_buf[sizeof(TaskRange) / sizeof(int)];
 
   //all works
-  std::list<TaskRange> works = partition(env.size,
+  std::list<TaskRange> works = partition(env.size, env.num_temps, 
                                          cfg.temp_list().size(),
-                                         cfg.cont_list().size(),
-                                         cfg.temp_npts(), cfg.cont_npts());
+                                         cfg.cont_list().size());
 
   while (!works.empty()) {
     //wait for receving a request.
@@ -99,28 +183,41 @@ void doLeaderLoop(RunEnv env, Config cfg) {
   }
 }
 
+//forward declaration
+void doWork(RunEnv env, Config cfg, TaskRange range);
+
 void doWorkerLoop(RunEnv env, Config cfg) {
 
+  support::TimingSys::startEvent("totalTime");
+
   MPI_Status mpi_status;
-  int out_buf[sizeof(TaskRange) / sizeof(int)];
+  int in_buf[sizeof(TaskRange) / sizeof(int)];
 
   while(1) {
     //send a work request to leader
     MPI_Send(0, 0, MPI_INT, 0, ReqTag, MPI_COMM_WORLD);
 
     //wait for a message
-    MPI_Recv(out_buf, 4, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &mpi_status);
+    MPI_Recv(in_buf, 4, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &mpi_status);
 
     if (mpi_status.MPI_TAG == DoneTag) break;
 
     //do work
-    std::cout << "Worker: " << rank << "; "
-        << "ts: " << out_buf[0] << "; "
-        << "te: " << out_buf[1] << "; "
-        << "cs: " << out_buf[2] << "; "
-        << "ce: " << out_buf[3] << '\n';
-    sleep(3);
+    TaskRange work;
+    work.temp_start = in_buf[0];
+    work.temp_end = in_buf[1];
+    work.cont_start = in_buf[2];
+    work.cont_end = in_buf[3];
+    support::LogSys::getLogger("perfLog").debug(
+        "Recived work: " + 
+        support::Type2String<int>(in_buf[0]) + ", " + 
+        support::Type2String<int>(in_buf[1]) + ", " + 
+        support::Type2String<int>(in_buf[2]) + ", " + 
+        support::Type2String<int>(in_buf[3]) + "\n");
+    doWork(env, cfg, work);
   }
+
+  support::TimingSys::startEvent("endTime");
 }
 
 /* doWork()
@@ -154,57 +251,90 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       //read cont data
       std::string path = cont_name + "/" + chnl_name;
       try {
+        support::TimingSys::restartEvent("readContinuous");
         size_t npts = readContinuous(path, cfg, env.host_pCont);
+        support::TimingSys::pauseEvent("readContinuous");
         //choose the larger as npts
         cont_npts = (cont_npts > npts) ? cont_npts : npts;
       }
       catch (support::Exception e) {
         //logging
-        //...
+        support::LogSys::getLogger("userLog").warning(
+            "Error read continuous file: " + path + "\n");
         continue;
       }
       //copy to device
       cuda::memcpyH2D(env.dev_pCont, env.host_pCont, 
                       cfg.cont_npts() * sizeof(float));
       //calculate mean and var
+      support::TimingSys::restartEvent("calcContinuousMeanVar");
       getContMeanVar(env.dev_pCont, cfg.cont_npts(), cfg.temp_npts(),
                      env.dev_pContMean, env.dev_pContVar);
+      support::TimingSys::pauseEvent("calcContinuousMeanVar");
 
       //temp loop
       for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
         //test snr
+        std::string temp_name = cfg.temp_list()[ti];
         std::string path = temp_name + "/" + cfg.snr_name();
         float snr = readSNR(path, chnl_name);
-        if (snr < cfg.snr_thr()) continue;
+        if (snr < cfg.snr_thr()) {
+          support::LogSys::getLogger("userLog").warning(
+              "\n-----------------------------------------\n" + 
+              "template channel under threshold: " + 
+              temp_name + "/" + chnl_name + "\n" +
+              "threshold: " + support::Type2String<float>(snr) + 
+              "-----------------------------------------\n");
+          continue;
+        }
 
         //read temp data
         path = temp_name + "/" + chnl_name;
         try {
+          support::TimingSys::restartEvent("readTemplate");
           readTemplate(path, cfg, host_pTemp);
+          support::TimingSys::pauseEvent("readTemplate");
         }
         catch (support::Exception e) {
           //logging
-          //...
+          support::LogSys::getLogger("userLog").warning(
+              "Error read template file: " + path + "\n");
           continue;
         }
 
         valid_channels[ti] ++;
         //calculate mean and var
         float mean, var;
+        support::TimingSys::restartEvent("calcTemplateMeanVar");
         getTempMeanVar(host_pTemp, cfg.temp_npts(), mean, var);
+        support::TimingSys::pauseEvent("calcTemplateMeanVar");
         //calculate correlation
         //... on ti 
+        support::TimingSys::restartEvent("calcCorr");
+
+        support::TimingSys::pauseEvent("calcCorr");
         //stack correlation
         //... on ti
+        support::TimingSys::restartEvent("stackCorr");
+
+        support::TimingSys::pauseEvent("stackCorr");
       }
     }
 
     //select
     for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
+      std::string temp_name = cfg.temp_list()[ti];
       //check valid channels
       if (valid_channels[ti] < cfg.numChnlThr()) {
         //logging
-        //...
+        support::LogSys::getLogger("userLog").warning(
+            "\n-----------------------------------------\n" + 
+            "Number of valid channel under threshold: " + 
+            cont_name + "\n" +
+            temp_name + "\n" +
+            "valid channel number: " + 
+            support::Type2String<unsigned>(valid_channels[ti]) + "\n" +
+            "-----------------------------------------\n");
         continue;
       }
 
@@ -214,17 +344,27 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
                       (ti - range.temp_start) * cfg.cont_npts(),
                       cont_npts * sizeof(float));
       //get MAD
+      support::TimingSys::restartEvent("calcMAD");
       float mad = getMAD(env.dev_pStack, cfg.cont_npts());
+      support::TimingSys::pauseEvent("calcMAD");
 
       //get path
-      std::string path = "~/aaa"; //...
+      std::string cont_basename = support::splitString(cont_name, '/').back();
+      std::string temp_basename = support::splitString(temp_name, '/').back();
+      std::string path = cfg.out_root() + "/" + temp_basename;
+      ///make the directory <out_root>/<temp_basename>
+      mkdir(path.c_str(), 0777);
+      ///get file path <out_root>/<temp_basename>/<mad_thr>times_<cont_basename>
+      path += "/" + support::Type2String<float> + "times_" + cont_basename;
       std::ofstream ofs;
       ofs.open(path);
       throwError(ofs.is_open(), usererr::file_not_open, path);
 
       //select
+      support::TimingSys::restartEvent("select");
       select(env.host_pCorr, cont_npts, mad, cfg.mad_ratio(),
              cfg.sample_rate(), valid_channels[ti], ofs);
+      support::TimingSys::pauseEvent("select");
 
     }
   }
