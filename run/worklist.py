@@ -45,23 +45,29 @@ def _getNumLaunch(num_temp, num_cont, num_channel, temp_npts, cont_npts):
     return num_launch
 
 #minimize the footprint of each launch
-def _partition(num_temp, num_cont, temp_npts, cont_npts, num_launch):
-    #this is not correct, needs to be modified
-    this is not correct, needs to be modified
-
+def _genWorkList(num_temp, num_cont, temp_npts, cont_npts, num_launch):
     opt_point = math.sqrt(
-        (num_temp * num_cont * cont_npts * temp_npts) / num_launch)
-    if (num_temp * temp_npts < opt_point):
-        num_temp_per_launch = num_temp
-    else:
-        num_temp_per_launch = int(opt_point / temp_npts) + 1
-    if (num_cont * cont_npts < opt_point):
-        num_cont_per_launch = num_cont
-    else:
-        num_cont_per_launch = int(opt_point / cont_npts) + 1
-    return num_temp_per_launch, num_cont_per_launch
+        (num_temp * num_cont * cont_npts) / (num_launch * temp_npts))
+    opt_point = int(opt_temp);
+    tseg_size = opt_point;
+    if (tseg_size > num_temp):
+        tseg_size = num_temp
+    cseg_size = num_temp * num_cont / num_launch / tseg_size;
+    worklist = []
+    for i in range(0, num_temp, tseg_size):
+        for j in range(0, num_cont, cseg_size):
+            temp_start = i
+            temp_end = i + tseg_size - 1
+            if temp_end > num_temp:
+                temp_end = num_temp - 1
+            cont_start = i
+            cont_end = i + tseg_size - 1
+            if cont_end > num_temp:
+                cont_end = num_temp - 1
+            worklist.append((temp_start, temp_end, cont_start, cont_end))
+    return worklist
 
-def getPartition(m_info):
+def genWorkList(m_info):
     temp_list_file = m_info['temp_list_file']
     num_temp = _countNumLines(temp_list_file)
     cont_list_file = m_info['cont_list_file']
@@ -72,15 +78,7 @@ def getPartition(m_info):
     cont_npts = m_info['cont_npts']
     num_launch = _getNumLaunch(num_temp, num_cont,
                                num_channel, temp_npts, cont_npts)
-    logger.debug('original num_launch: %s' %num_launch)
-    temp_seg_size, cont_seg_size = _partition(
-        num_temp, num_cont, temp_npts, cont_npts)
-    num_launch = (common.getIntQuot(num_temp, temp_seg_size) *
-                  common.getIntQuot(num_cont, cont_seg_size))
-    logger.info('num_temp: %s, num_cont: %s, num_channel: %s, temp_npts: %s, cont_npts: %s'
-                %(num_temp, num_cont, num_channel, temp_npts, cont_npts))
-    logger.info('>>>num_launch: %s, temp_seg_size: %s, cont_seg_size: %s'
-                %(num_launch, temp_seg_size, cont_seg_size))
-    return num_launch, temp_seg_size, cont_seg_size
+    logger.debug('approximate num_launch: %s' %num_launch)
+    return _genWorkList(num_temp, num_cont, temp_npts, cont_npts, num_launch)
 
 

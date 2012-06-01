@@ -24,6 +24,7 @@ l_info = [
     'snr_name',
     'snr_thr',
     'mad_ratio',
+    'num_chnlThr',
 ]
 
 def _getConfigStr(m_info):
@@ -48,8 +49,13 @@ def _checkConfig(m_info):
     common.existFileOrDie(m_info['temp_list_file'])
     common.existFileOrDie(m_info['cont_list_file'])
     common.existFileOrDie(m_info['channel_list_file'])
-    common.isUInt(m_info['temp_npts'])
-    common.isUInt(m_info['cont_npts'])
+    common.isUIntOrDie(m_info['temp_npts'])
+    common.isUIntOrDie(m_info['cont_npts'])
+    common.isUIntOrDie(m_info['num_chnlThr'])
+    common.isUFloatOrDie(m_info['temp_tbefore'])
+    common.isUFloatOrDie(m_info['temp_tafter'])
+    common.isUFloatOrDie(m_info['snr_thr'])
+    common.isUFloatOrDie(m_info['mad_ratio'])
 
 
 def readConfig():

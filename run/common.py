@@ -39,13 +39,21 @@ def existDirOrDie(dir_name):
 
 def makeDirOrPass(dir_name):
     try:
-        os.mkdir(dir_name)
+        os.makedirs(dir_name)
     except OSError:
         pass
 
-def isUInt(n):
+def isUIntOrDie(n):
     try:
         number = int(n)
+    except:
+        raise ValueError('Number not integer: %s' %n)
+    if number <= 0:
+        raise ValueError('Number less or equal than zero: %s' %n)
+
+def isUFloatOrDie(n):
+    try:
+        number = float(n)
     except:
         raise ValueError('Number not integer: %s' %n)
     if number <= 0:

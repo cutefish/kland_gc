@@ -3,25 +3,28 @@ workdir.py
 
 Organizing work directories and files for launches
 Work dir hierarchy:
-under user work_dir
-/$work_dir
-    /worklist               --  work list directory
-      /partition            --  file list partitions
-        /temp
-          /<temp_list_file>0
-          ...
-        /cont
-          /<cont_list_file>0
-            ...
-      /config0              --  launch 0 config
-      /config1
-      ...
-    /tmp                    --  temporary directory
-    /log                    --  log directory
-        /0
-        /1
+under user defined <work_dir>
+/<work_dir>
+--/<timestamp>               --  work list directory
+----/partition            --  file list partitions
+------/temp
+--------/temp0
         ...
-    /output                 --  output results
+------/cont
+--------/cont0
+        ...
+------/config
+--------/config0              --  launch 0 config
+--------/config1
+        ...
+----/log                    --  log directory
+------/<userlog>0
+------/<userlog>1
+      ...
+----/out                    --  output results
+------/<template0>
+------/<template1>
+      ...
 
 @method
 setup()     --  set up the directory
@@ -33,33 +36,22 @@ import os
 import shutil
 import time
 
-from partition import getPartition
+from worklist import genWorkList
 
 logger = logging.getLogger('workdir')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 def _getTimeStr():
-    time.strftime('_%y%m%d-%H:%M:%S')
+    time.strftime('_%y%m%d:%H:%M:%S')
 
-def _getSubDirPath(work_dir, name, s_curr):
-    return '%s/%s%s' %(work_dir, name, s_curr)
-
-def _makeWorkListDir(m_info, s_curr):
+def makeWorkDirs(m_info, s_curr):
     work_dir = m_info['work_dir']
-    #worklist
-    worklist_dir = _getSubDirPath(work_dir, 'worklist', s_curr)
-    os.mkdir(worklist_dir)
-    #partition
-    partition_dir = worklist_dir + '/partition'
-    os.mkdir(partition_dir)
-    #partition/temp
-    part_temp_dir = partition_dir + '/temp'
-    os.mkdir(part_temp_dir)
-    #partition/cont
-    part_cont_dir = partition_dir + '/cont'
-    os.mkdir(part_cont_dir)
-    return worklist_dir
+    common.makeDirOrPass('%s/%s/partition/temp' %(work_dir, s_curr))
+    common.makeDirOrPass('%s/%s/partition/cont' %(work_dir, s_curr))
+    common.makeDirOrPass('%s/%s/partition/config' %(work_dir, s_curr))
+    common.makeDirOrPass('%s/%s/log' %(work_dir, s_curr))
+    common.makeDirOrPass('%s/%s/out' %(work_dir, s_curr))
 
 def _partitionList(orig_file, seg_dir, seg_size):
     #Parition \p orig_file into files of size \p seg_size
@@ -118,18 +110,6 @@ def _setupWorkList(m_info, worklist_dir, num_launch,
                     worklist_dir, cont_list_file, idx_c)
             f_new.write('%s:%s' %(key, value))
 
-def _setupAuxDir(m_info, s_curr):
-    work_dir = m_info['work_dir']
-    #tmp
-    tmp_dir = _getSubDirPath(work_dir, 'tmp', s_curr)
-    common.makeDirOrPass(tmp_dir)
-    #log
-    log_dir = _getSubDirPath(work_dir, 'log', s_curr)
-    common.makeDirOrPass(log_dir)
-    #output
-    output_dir = _getSubDirPath(work_dir, 'output', s_curr)
-    common.makeDirOrPass(otuput_dir)
-
 def _setupWorkDir(m_info, s_curr):
     work_dir = m_info['work_dir']
     try:
@@ -142,12 +122,6 @@ def _setupWorkDir(m_info, s_curr):
                    temp_seg_size, cont_seg_size)
     _setupAuxDir(m_info, s_curr)
     logger.info('Work space setup done: %s' %work_dir)
-
-def makeAuxDir(m_info, s_curr, launch_id):
-    _setupAuxDir(m_info, s_curr)
-    log_dir = _getSubDirPath(work_dir, 'log', s_curr)
-    log_dir += str(launch_id)
-    common.makeDirOrPass(log_dir)
 
 def setup(m_info):
     """Set up work directory for launches."""

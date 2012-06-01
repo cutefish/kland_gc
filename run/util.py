@@ -78,7 +78,9 @@ def genConfigExample(outfile):
     s_config += 'temp_tbefore:0.5\n'
     s_config += 'temp_tafter:3.5\n'
     s_config += 'snr_thr:5\n'
+    s_config += 'snr_name:wf_SNR_10_40.dat.new\n'
     s_config += 'mad_ratio:9\n'
+    s_config += 'num_chnlThr:12\n'
     f_out = open(outfile, 'w')
     f_out.write(s_config)
     f_out.close()
