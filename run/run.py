@@ -11,8 +11,7 @@ import workdir
 import pbs
 import settings
 
-def getCmdStr(config_file, exec_file,
-              out_root, log_root):
+def getCmdStr(exec_file, config_file, log_root, out_root):
     l_ret = [
         'mpirun %s %s %s %s\n' %(
             exec_file, config_file,
@@ -31,24 +30,20 @@ def getCmdStr(config_file, exec_file,
     return ''.join(s for s in l_ret)
 
 def runWork(m_info, s_timestamp):
-    #worklist_dir
     work_dir = m_info['work_dir']
-    worklist_dir = '%s/worklist%s' %(work_dir, s_timestamp)
-
-    #get all the work
-    worklist = common.glob('%s/config[0-9]*' %worklist_dir)
-
-    #create a temporary script dir under work_dir
-    script_dir = '%s/script' %work_dir
+    script_dir = '%s/%s/scripts' %(work_dir, s_timestamp)
+    config_dir = '%s/%s/partition/config' %(work_dir, s_timestamp)
+    workdir.makeWorkDirs(m_info, s_timestamp)
     common.makeDirOrPass(script_dir)
+    worklist = common.glob('%s/config[0-9]*' %config_dir)
 
     #create scripts
     for work in worklist:
-        launch_id = common.getBasename(work).lstrip('config')
+        launch_id = common.getBasename(work).rstrip('config')
         config_file = work
         exec_file = m_info['exec']
-        out_root = '%s/output%s' %(work_dir, s_timestamp)
-        log_root = '%s/log%s/%s' %(work_dir, s_timestamp, launch_id)
+        out_root = '%s/%s/out' %(work_dir, s_timestamp)
+        log_root = '%s/%s/log/launch%s' %(work_dir, s_timestamp, launch_id)
         pbs_setting = pbs.PBSOption()
         resources = 'nodes=%s:ppn=%s:gpus=%s,walltime=%s:00:00' %(
             settings.nodes_per_launch, settings.gpus_per_node,
@@ -61,38 +56,28 @@ def runWork(m_info, s_timestamp):
         pbs_setting.setOptVals(d_values)
         s_script = pbs_setting.getScriptStr(
             getCmdStr(config_file, exec_file, out_root, log_root))
-        f_script = open('%s/%s' %(script_dir, work), 'w')
+        f_script = open('%s/pbslaunch%s.sh' %(script_dir, launch_id), 'w')
         f_script.write(s_script)
         f_script.close()
 
     #launch
     for work in worklist:
-        #make sure aux dir exists
-        launch_id = common.getBasename(work).lstrip('config')
-        workdir.makeAuxDir(m_info, s_timestamp, launch_id)
-        #launch
-        pbs.submitWork('%s/%s' %(script_dir, work))
+        launch_id = common.getBasename(work).rstrip('config')
+        pbs.submitWork('%s/pbslaunch%s.sh' %(script_dir, launch_id))
 
-    #clean up the script dir
-    os.rmdir(script_dir)
 
 def run():
     m_info = configure.readConfig()
     work_dir = m_info['work_dir']
-    l_workleft = workdir.getLeftWork(work_dir)
-    worklist_idx = -1
-    if (not len(l_workleft) == 0):
-        print 'Work directory not empty: ' %work_dir
-        print 'Left work:'
-        for i, work in enumerate(l_workleft):
-            print '%s: %s' %(i + 1, common.getBasename(work))
-        worklist_idx = int(raw_input('Select work[0 for set up new]:')) - 1
-
-    if (worklist_idx == -1):
+    exist_runs = common.glob(work_dir + '/[0-9]*_[0-9]*')
+    print 'Launch: '
+    print '%s: %s' %(0, 'Create new')
+    print '\n'.join('%s: %s' %(i + 1, e) for i, e in enumerate(exist_runs))
+    idx = int(raw_input('Select work:'))
+    if idx == 0:
         s_timestamp = workdir.setup(m_info)
     else:
-        s_timestamp = common.getBasename(
-            l_workleft[worklist_idx]).lstrip(worklist)
+        s_timestamp = exist_runs[idx - 1]
 
     runWork(m_info, s_timestamp)
 

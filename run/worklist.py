@@ -53,19 +53,21 @@ def _genWorkList(num_temp, num_cont, temp_npts, cont_npts, num_launch):
     if (tseg_size > num_temp):
         tseg_size = num_temp
     cseg_size = num_temp * num_cont / num_launch / tseg_size;
-    worklist = []
+    templist = []
     for i in range(0, num_temp, tseg_size):
-        for j in range(0, num_cont, cseg_size):
-            temp_start = i
-            temp_end = i + tseg_size - 1
-            if temp_end > num_temp:
-                temp_end = num_temp - 1
-            cont_start = i
-            cont_end = i + tseg_size - 1
-            if cont_end > num_temp:
-                cont_end = num_temp - 1
-            worklist.append((temp_start, temp_end, cont_start, cont_end))
-    return worklist
+        temp_start = i
+        temp_end = i + tseg_size - 1
+        if temp_end > num_temp:
+            temp_end = num_temp - 1
+        templist.append((temp_start, temp_end))
+    contlist = []
+    for j in range(0, num_cont, cseg_size):
+        cont_start = i
+        cont_end = i + cseg_size - 1
+        if cont_end > num_temp:
+            cont_end = num_temp - 1
+        contlist.append((cont_start, cont_end))
+    return templist, contlist
 
 def genWorkList(m_info):
     temp_list_file = m_info['temp_list_file']
