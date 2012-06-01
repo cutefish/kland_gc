@@ -40,16 +40,15 @@ def _countNumLines(file_name):
 def _getNumLaunch(num_temp, num_cont, num_channel, temp_npts, cont_npts):
     node_time = (num_temp * num_cont * cont_npts * temp_npts * num_channel *
                  sizeof_data)/ gpu_bandwidth / gpus_per_node #seconds
-    num_node = node_time / secs_per_hour / nodes_time_lim
-    num_launch = num_node / nodes_per_launch
+    num_node = node_time / secs_per_hour / node_time_lim
+    num_launch = int(math.ceil(num_node / nodes_per_launch))
     return num_launch
 
 #minimize the footprint of each launch
 def _genWorkList(num_temp, num_cont, temp_npts, cont_npts, num_launch):
     opt_point = math.sqrt(
         (num_temp * num_cont * cont_npts) / (num_launch * temp_npts))
-    opt_point = int(opt_temp);
-    tseg_size = opt_point;
+    tseg_size = int(opt_point)
     if (tseg_size > num_temp):
         tseg_size = num_temp
     cseg_size = num_temp * num_cont / num_launch / tseg_size;
@@ -61,11 +60,11 @@ def _genWorkList(num_temp, num_cont, temp_npts, cont_npts, num_launch):
             temp_end = num_temp - 1
         templist.append((temp_start, temp_end))
     contlist = []
-    for j in range(0, num_cont, cseg_size):
+    for i in range(0, num_cont, cseg_size):
         cont_start = i
         cont_end = i + cseg_size - 1
-        if cont_end > num_temp:
-            cont_end = num_temp - 1
+        if cont_end > num_cont:
+            cont_end = num_cont - 1
         contlist.append((cont_start, cont_end))
     return templist, contlist
 
@@ -76,11 +75,11 @@ def genWorkList(m_info):
     num_cont = _countNumLines(cont_list_file)
     channel_list_file = m_info['channel_list_file']
     num_channel = _countNumLines(channel_list_file)
-    temp_npts = m_info['temp_npts']
-    cont_npts = m_info['cont_npts']
+    temp_npts = int(m_info['temp_npts'])
+    cont_npts = int(m_info['cont_npts'])
     num_launch = _getNumLaunch(num_temp, num_cont,
                                num_channel, temp_npts, cont_npts)
-    logger.debug('approximate num_launch: %s' %num_launch)
+    logger.info('approximate num_launch: %s' %num_launch)
     return _genWorkList(num_temp, num_cont, temp_npts, cont_npts, num_launch)
 
 

@@ -4,12 +4,17 @@ run.py
 Run the kernels.
 
 """
+import logging
 
 import configure
 import common
 import workdir
 import pbs
 import settings
+
+logger = logging.getLogger('run')
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler())
 
 def getCmdStr(exec_file, config_file, log_root, out_root):
     l_ret = [
@@ -33,17 +38,17 @@ def runWork(m_info, s_timestamp):
     work_dir = m_info['work_dir']
     script_dir = '%s/%s/scripts' %(work_dir, s_timestamp)
     config_dir = '%s/%s/partition/config' %(work_dir, s_timestamp)
-    workdir.makeWorkDirs(m_info, s_timestamp)
     common.makeDirOrPass(script_dir)
     worklist = common.glob('%s/config[0-9]*' %config_dir)
 
     #create scripts
     for work in worklist:
-        launch_id = common.getBasename(work).rstrip('config')
+        launch_id = common.getBasename(work).lstrip('config')
         config_file = work
         exec_file = m_info['exec']
         out_root = '%s/%s/out' %(work_dir, s_timestamp)
         log_root = '%s/%s/log/launch%s' %(work_dir, s_timestamp, launch_id)
+        common.makeDirOrPass(log_root) #log_root need to be created
         pbs_setting = pbs.PBSOption()
         resources = 'nodes=%s:ppn=%s:gpus=%s,walltime=%s:00:00' %(
             settings.nodes_per_launch, settings.gpus_per_node,
@@ -55,7 +60,7 @@ def runWork(m_info, s_timestamp):
         }
         pbs_setting.setOptVals(d_values)
         s_script = pbs_setting.getScriptStr(
-            getCmdStr(config_file, exec_file, out_root, log_root))
+            getCmdStr(exec_file, config_file, log_root, out_root))
         f_script = open('%s/pbslaunch%s.sh' %(script_dir, launch_id), 'w')
         f_script.write(s_script)
         f_script.close()
@@ -63,8 +68,9 @@ def runWork(m_info, s_timestamp):
     #launch
     for work in worklist:
         launch_id = common.getBasename(work).rstrip('config')
+        logger.info('pbs submit work: %s/pbslaunch%s.sh' %(
+            script_dir, launch_id))
         pbs.submitWork('%s/pbslaunch%s.sh' %(script_dir, launch_id))
-
 
 def run():
     m_info = configure.readConfig()
@@ -78,6 +84,7 @@ def run():
         s_timestamp = workdir.setup(m_info)
     else:
         s_timestamp = exist_runs[idx - 1]
+        workdir.makeWorkDirs(m_info, s_timestamp)
 
     runWork(m_info, s_timestamp)
 

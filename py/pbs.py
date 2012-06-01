@@ -53,7 +53,7 @@ class PBSOption:
         return self.d_options[key][PBSOption._idx_value]
 
     def setOptVal(self, key, value):
-        self.d_options[key][PBSSetting.idx_value] = value
+        self.d_options[key][PBSOption._idx_value] = value
 
     def setOptVals(self, d_keyvalue):
         for key in d_keyvalue:
@@ -68,11 +68,11 @@ class PBSOption:
         ret += '#!/bin/bash\n\n'
         for key in self.d_options:
             if (self.getOptVal(key) != None):
-                ret += getPBSOptStr(key)
-        ret += '### End of PBS options ###'
+                ret += self.getPBSOptStr(key)
+        ret += '### End of PBS options ###\n'
         ret += s_cmd
         return ret
 
 def submitWork(script):
     cmd = 'qsub %s' %script
-    subprocess.check_output(cmd.split(' '))
+    #subprocess.check_output(cmd.split(' '))

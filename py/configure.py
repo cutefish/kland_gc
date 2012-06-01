@@ -29,7 +29,7 @@ l_info = [
 
 def _getConfigStr(m_info):
     ret = ''
-    for k, v in m_info:
+    for k, v in m_info.iteritems():
         ret += '%s:%s\n' %(k,v)
     return ret
 

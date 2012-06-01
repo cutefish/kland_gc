@@ -38,13 +38,14 @@ import shutil
 import time
 
 from worklist import genWorkList
+import common
 
 logger = logging.getLogger('workdir')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 def _getTimeStr():
-    time.strftime('%y%m%d_%H%M%S')
+    return time.strftime('%y%m%d_%H%M%S')
 
 def makeWorkDirs(m_info, s_curr):
     work_dir = m_info['work_dir']
@@ -53,6 +54,7 @@ def makeWorkDirs(m_info, s_curr):
     common.makeDirOrPass('%s/%s/partition/config' %(work_dir, s_curr))
     common.makeDirOrPass('%s/%s/log' %(work_dir, s_curr))
     common.makeDirOrPass('%s/%s/out' %(work_dir, s_curr))
+    logger.info("setting up %s/%s" %(work_dir, s_curr))
 
 def _getLinesFromFile(filename):
     fh = open(filename, 'r')
@@ -73,32 +75,33 @@ def _setupWorks(m_info, s_curr):
     #read list
     temp_list_file = m_info['temp_list_file']
     templist = _getLinesFromFile(temp_list_file)
-    cont_list_file = m_info['temp_list_file']
+    cont_list_file = m_info['cont_list_file']
     contlist = _getLinesFromFile(cont_list_file)
     #partition works
     temp_works, cont_works = genWorkList(m_info)
+    print temp_works, cont_works
     # temp
     for i, work in enumerate(temp_works):
         start = work[0]
         end = work[1]
-        fh = open(temp_dir + 'temp' + str(i), 'w')
+        fh = open(temp_dir + '/temp' + str(i), 'w')
         for j in range(start, end + 1):
-            fh.write(templist[i])
+            fh.write(templist[j])
         fh.close()
     # cont
     for i, work in enumerate(cont_works):
         start = work[0]
         end = work[1]
-        fh = open(cont_dir + 'cont' + str(i), 'w')
+        fh = open(cont_dir + '/cont' + str(i), 'w')
         for j in range(start, end + 1):
-            fh.write(contlist[i])
+            fh.write(contlist[j])
         fh.close()
     # config
     configs = _getLinesFromFile(m_info['config_file'])
     for i, twork in enumerate(temp_works):
         for j, cwork in enumerate(cont_works):
             idx = i * len(cont_works) + j
-            fh = open(config_dir + 'config' + str(idx), 'w')
+            fh = open(config_dir + '/config' + str(idx), 'w')
             for l in configs:
                 key, value = l.strip().split(':')
                 if key == 'temp_list_file':

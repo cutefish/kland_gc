@@ -4,7 +4,7 @@ common.py
 Common useful functions
 """
 
-import glob
+import glob as pyglob
 import os
 
 def getIntQuot(dividend, divisor):
@@ -24,7 +24,7 @@ def getAbsPathList(l_path):
     return l_path
 
 def glob(pattern):
-    return getAbsPathList(glob.glob(pattern))
+    return getAbsPathList(pyglob.glob(pattern))
 
 def getBasename(path):
     return os.path.basename(path)
