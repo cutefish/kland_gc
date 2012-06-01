@@ -1,16 +1,21 @@
-include ../Defines.mk
+include $(ROOT)/Defines.mk
 
-.PHONY: all objects
+.PHONY: all
 
-all: $(LIB_TARGET)
+all:
+	@mkdir -p obj
 
-$(LIB_TARGET) : objects
-	$(AR) cr $@ $(wildcard $(BIN_DIR)/*.o)
-	$(RANLIB) $@
-	mv $(LIB_TARGET) $(BIN_DIR)/$(LIB_TARGET)
-	-rm -f $(BIN_DIR)/*.o
-
-objects : 
-	@mkdir -p $(BIN_DIR)
-	@$(MAKE) -C support
+#.PHONY: all objects
+#
+#all: $(LIB_TARGET)
+#
+#$(LIB_TARGET) : objects
+#	$(AR) cr $@ $(wildcard $(BIN_DIR)/*.o)
+#	$(RANLIB) $@
+#	mv $(LIB_TARGET) $(BIN_DIR)/$(LIB_TARGET)
+#	-rm -f $(BIN_DIR)/*.o
+#
+#objects : 
+#	@mkdir -p $(BIN_DIR)
+#	@$(MAKE) -C support
 
