@@ -87,7 +87,7 @@ def genConfigExample(outfile):
 
 def _chooseUtil(name):
     if name == 'genWaveList':
-        root_dir = common.getAbsPath(raw_input('Root Directory:'))
+        root_dir = common.getAbsPath(raw_input('Directory:'))
         s_pattern = raw_input('Pattern:')
         outfile = common.getAbsPath(raw_input('Output File Name:'))
         genWaveList(root_dir, s_pattern, outfile)
@@ -133,7 +133,7 @@ def main():
     for i, util in enumerate(utils):
         print '%s: %s' %(i, util)
     idx = raw_input('Select index:')
-    _chooseUtil(utils[idx])
+    _chooseUtil(utils[int(idx)])
 
 if __name__ == '__main__':
     main()
