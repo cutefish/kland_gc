@@ -1,18 +1,20 @@
 #include <cmath>
+#include <list>
 #include <string>
 #include <sys/stat.h>
+#include <sstream>
 
-#include "user/Config.h"
-#include "user/Hosts.h"
-#include "user/Works.h"
-#include "user/UserErrCategory.h"
-#include "user/UserIO.h"
 #include "cuda/Runtime.h"
 #include "support/Type.h"
 #include "support/Exception.h"
 #include "support/Logging.h"
 #include "support/Type.h"
 #include "support/StringUtils.h"
+#include "user/Config.h"
+#include "user/Compute.h"
+#include "user/Hosts.h"
+#include "user/UserErrCategory.h"
+#include "user/UserIO.h"
 
 enum MsgTags {
   WorkTag,
@@ -21,19 +23,19 @@ enum MsgTags {
 };
 
 struct TaskRange {
-  temp_start;
-  temp_end;
-  cont_start;
-  cont_end;
+  int temp_start;
+  int temp_end;
+  int cont_start;
+  int cont_end;
 };
 
 /* init() */
 RunEnv init(Config cfg) {
   RunEnv env;
   //initialize mpi
-  int errno = MPI_Init(NULL, NULL);
-  user::throwError(errno == MPI_SUCCESS, 
-                   usererr::mpi_error,
+  int error = MPI_Init(NULL, NULL);
+  user::throwError(error == MPI_SUCCESS, 
+                   usererr::mpi_call_error,
                    "errorno: " + support::Type2String<int>(errno));
   MPI_Comm_rank(MPI_COMM_WORLD, &env.rank);
   MPI_Comm_size(MPI_COMM_WORLD, &env.size);
@@ -41,10 +43,10 @@ RunEnv init(Config cfg) {
 
   //initialize gpu card
   cuda::setDevice(env.dev_rank);
-  env.dev_prop = cuda::DeviceProperties(env.dev_rank);
+  env.dev_prop = new cuda::DeviceProperties(env.dev_rank);
 
   //calculate and allocate memory
-  size_t capacity = env.dev_prop.globalMemorySize();
+  size_t capacity = env.dev_prop->globalMemorySize();
   size_t left = capacity;
   size_t req;
   ///device: one continuous waveform at a time
@@ -96,9 +98,9 @@ RunEnv init(Config cfg) {
 /* finalize() */
 void finalize(RunEnv env) {
   //finalize mpi
-  int errno = MPI_Finalize();
-  user::throwError(errno == MPI_SUCCESS, 
-                   usererr::mpi_error,
+  int errer = MPI_Finalize();
+  user::throwError(errer == MPI_SUCCESS, 
+                   usererr::mpi_call_error,
                    "errorno: " + support::Type2String<int>(errno));
   
   //free pointers
@@ -113,17 +115,17 @@ void finalize(RunEnv env) {
   //log performance stats
   for (support::TimingSys::iterator it = support::TimingSys::begin();
        it != support::TimingSys::end(); ++it) {
-    if ((*it).name() == "Total time")
+    if ((*it).name() == "totalTime")
       support::LogSys::getLogger("perfLog").info(
           "Total time: " + support::Time2String(
-              support::TimingSys::get("totalTime").tot_dur, "%TH:%Tm:%Ts\n\n"));
+              (*it).tot_dur(), "%TH:%Tm:%Ts\n\n"));
     else
       support::LogSys::getLogger("perfLog").info(
-          (*it).name + "\n" + 
+          (*it).name() + "\n" + 
           "total: " + support::Time2String((*it).run_dur(), "%TH:%Tm:%Ts\n") + 
           "ave: " + support::Time2String((*it).ave_dur(), "%Ti ms\n") + 
-          "num: " + (*it).num_pauses() + "\n\n";
-          );
+          "num: " + support::Type2String<int>((*it).num_pauses()) + 
+          "\n\n");
 
   }
 
@@ -178,7 +180,7 @@ void doLeaderLoop(RunEnv env, Config cfg) {
   }
 
   //all work done
-  for (int i = 0; i < mpi_size; ++i) {
+  for (int i = 0; i < env.size; ++i) {
     MPI_Send(0, 0, MPI_INT, i, DoneTag, MPI_COMM_WORLD);
   }
 }
@@ -224,9 +226,9 @@ void doWorkerLoop(RunEnv env, Config cfg) {
  * Actually do the work according to the configuration.
  */
 void doWork(RunEnv env, Config cfg, TaskRange range) {
-  std::vector<std::string>& cont_list = cfg.cont_list();
-  std::vector<std::string>& temp_list = cfg.temp_list();
-  std::vector<std::string>& ch_list = cfg.channel_list();
+  const std::vector<std::string>& cont_list = cfg.cont_list();
+  const std::vector<std::string>& temp_list = cfg.temp_list();
+  const std::vector<std::string>& ch_list = cfg.channel_list();
 
   //cont loop
   for (int ci = range.cont_start; ci < range.cont_end + 1; ++ci) {
@@ -279,12 +281,13 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         std::string path = temp_name + "/" + cfg.snr_name();
         float snr = readSNR(path, chnl_name);
         if (snr < cfg.snr_thr()) {
-          support::LogSys::getLogger("userLog").warning(
-              "\n-----------------------------------------\n" + 
-              "template channel under threshold: " + 
-              temp_name + "/" + chnl_name + "\n" +
-              "threshold: " + support::Type2String<float>(snr) + 
-              "-----------------------------------------\n");
+          std::stringstream ss;
+          ss << "\n--------------------------------\n";
+          ss << "template channel under threshold:";
+          ss << temp_name + "/" + chnl_name + "\n";
+          ss << "threshold: " + support::Type2String<float>(snr);
+          ss << "\n--------------------------------\n";
+          support::LogSys::getLogger("userLog").warning(ss.str());
           continue;
         }
 
@@ -292,7 +295,7 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         path = temp_name + "/" + chnl_name;
         try {
           support::TimingSys::restartEvent("readTemplate");
-          readTemplate(path, cfg, host_pTemp);
+          readTemplate(path, cfg, env.host_pTemp);
           support::TimingSys::pauseEvent("readTemplate");
         }
         catch (support::Exception e) {
@@ -306,7 +309,7 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         //calculate mean and var
         float mean, var;
         support::TimingSys::restartEvent("calcTemplateMeanVar");
-        getTempMeanVar(host_pTemp, cfg.temp_npts(), mean, var);
+        getTempMeanVar(env.host_pTemp, cfg.temp_npts(), mean, var);
         support::TimingSys::pauseEvent("calcTemplateMeanVar");
         //calculate correlation
         //... on ti 
@@ -325,21 +328,22 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
     for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
       std::string temp_name = cfg.temp_list()[ti];
       //check valid channels
-      if (valid_channels[ti] < cfg.numChnlThr()) {
+      if (valid_channels[ti] < cfg.num_chnlThr()) {
         //logging
-        support::LogSys::getLogger("userLog").warning(
-            "\n-----------------------------------------\n" + 
-            "Number of valid channel under threshold: " + 
-            cont_name + "\n" +
-            temp_name + "\n" +
-            "valid channel number: " + 
-            support::Type2String<unsigned>(valid_channels[ti]) + "\n" +
-            "-----------------------------------------\n");
+        std::stringstream ss;
+        ss << "\n--------------------------------\n";
+        ss << "Number of valid channel under threshold: ";
+        ss << cont_name << "\n";
+        ss << temp_name << "\n";
+        ss << "valid channel number: ";
+        ss << support::Type2String<unsigned>(valid_channels[ti]) + "\n";
+        ss << "\n--------------------------------\n";
+        support::LogSys::getLogger("userLog").warning(ss.str());
         continue;
       }
 
       //copy back
-      cuda::memcpyD2H(env.host_pCorr, 
+      cuda::memcpyD2H(env.host_pCont, 
                       env.dev_pStack + 
                       (ti - range.temp_start) * cfg.cont_npts(),
                       cont_npts * sizeof(float));
@@ -355,14 +359,16 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       ///make the directory <out_root>/<temp_basename>
       mkdir(path.c_str(), 0777);
       ///get file path <out_root>/<temp_basename>/<mad_thr>times_<cont_basename>
-      path += "/" + support::Type2String<float> + "times_" + cont_basename;
+      path += std::string("/") + 
+          support::Type2String<float>(cfg.mad_ratio()) + 
+          "times_" + cont_basename;
       std::ofstream ofs;
-      ofs.open(path);
-      throwError(ofs.is_open(), usererr::file_not_open, path);
+      ofs.open(path.c_str());
+      user::throwError(ofs.is_open(), usererr::file_not_open, path);
 
       //select
       support::TimingSys::restartEvent("select");
-      select(env.host_pCorr, cont_npts, mad, cfg.mad_ratio(),
+      select(env.host_pCont, cont_npts, mad, cfg.mad_ratio(),
              cfg.sample_rate(), valid_channels[ti], ofs);
       support::TimingSys::pauseEvent("select");
 

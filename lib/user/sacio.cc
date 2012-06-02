@@ -1,6 +1,6 @@
-#include "sacio.h"
 
 #include "support/Exception.h"
+#include "user/sacio.h"
 #include "user/UserErrCategory.h"
 
 /*** SacInput ***/
@@ -12,23 +12,23 @@ SacInput::SacInput(std::string name) {
   m_ifs.open(name.c_str());
   user::throwError(m_ifs.is_open(), usererr::file_not_open, name);
   m_ifs.read((char*) &m_header, sizeof(m_header));
-  user::throwError(m_ifs.is_good(), usererr::sac_header_error, name);
+  user::throwError(m_ifs.good(), usererr::sac_header_error, name);
 }
 
 /* SacInput::name()
  */
-inline std::string SacInput::name() const { return m_name; }
+std::string SacInput::name() const { return m_name; }
 
 /* SacInput::header()
  */
-inline SACHEAD SacInput::header() const { return m_header; }
+SACHEAD SacInput::header() const { return m_header; }
 
 /* SacInput::read()
  */
 void SacInput::read(char* ptr, size_t pos, size_t size) {
   m_ifs.seekg(sizeof(m_header) + pos, std::ios::beg);
   m_ifs.read(ptr, size);
-  user::throwError(m_ifs.is_good(), usererr::sac_read_error, name);
+  user::throwError(m_ifs.good(), usererr::sac_read_error, m_name);
 }
 
 /*** SacOutput ***/
@@ -36,18 +36,18 @@ void SacInput::read(char* ptr, size_t pos, size_t size) {
 /* SacOutput::ctor()
  * Open file
  */
-SacOutput::SacOutput() {
-  m_ofs.open(name_.c_str());
+SacOutput::SacOutput(std::string name) {
+  m_ofs.open(name.c_str());
   user::throwError(m_ofs.is_open(), usererr::file_not_open, name);
 }
 
 /* SacOutput::name()
  */
-inline std::string SacOutput::name() const { return m_name; }
+std::string SacOutput::name() const { return m_name; }
 
 /* SacInput::header()
  */
-inline SACHEAD SacOutput::header() const { return m_header; }
+SACHEAD SacOutput::header() const { return m_header; }
 
 
 /* SacOutput::write()
@@ -60,13 +60,13 @@ void SacOutput::write(char* ptr, size_t size,
   m_header.delta = delta;
   m_header.b = begin;
   m_header.o = 0.;
-  m_header.e = b0 + (npts - 1) * header.delta;
+  m_header.e = begin + (m_header.npts - 1) * m_header.delta;
   m_header.iztype = IO;
   m_header.iftype = ITIME;
   m_header.leven = TRUE;
   m_ofs.write((char*)&m_header, sizeof(m_header));
   //write data
   m_ofs.write(ptr, size);
-  user::throwError(m_ofs.is_good(), usererr::sac_write_error, name);
+  user::throwError(m_ofs.good(), usererr::sac_write_error, m_name);
 }
 

@@ -1,19 +1,12 @@
 include Defines.mk
 
-.PHONY: default all lib clean
+.PHONY: all clean kland_gc
 
-default: all
+all: kland_gc
 
-all: $(LIB_TARGET) $(KLAND_GC)
-
-lib: $(LIB_TARGET)
-
-$(LIB_TARGET):
+kland_gc:
 	@$(MAKE) -C $(LIB_DIR)
 
-$(KLAND_GC): $(LIB_TARGET)
-	@$(MAKE) -C $(KLGC_DIR)
-
 clean:
-	-rm -f $(BIN_DIR)/$(LIB_TARGET)
-	-rm -f $(BIN_DIR)/$(KLAND_GC)
+	-rm -f $(KLAND_GC)
+	@$(MAKE) -C $(LIB_DIR) clean

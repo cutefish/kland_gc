@@ -1,21 +1,32 @@
-include $(ROOT)/Defines.mk
+include Defines.mk
 
-.PHONY: all
+MODULES = cuda user
+OBJ_DIR = obj
 
-all:
-	@mkdir -p obj
+CCSRC = $(foreach sdir, $(MODULES), $(wildcard $(sdir)/*.cc))
+CUSRC = $(foreach sdir, $(MODULES), $(wildcard $(sdir)/*.cu))
+OBJCC = $(patsubst %.cc, $(OBJ_DIR)/%.cco, $(notdir $(CCSRC)))
+OBJCU = $(patsubst %.cu, $(OBJ_DIR)/%.cuo, $(notdir $(CUSRC)))
+OBJ = $(OBJCC) $(OBJCU)
 
-#.PHONY: all objects
-#
-#all: $(LIB_TARGET)
-#
-#$(LIB_TARGET) : objects
-#	$(AR) cr $@ $(wildcard $(BIN_DIR)/*.o)
-#	$(RANLIB) $@
-#	mv $(LIB_TARGET) $(BIN_DIR)/$(LIB_TARGET)
-#	-rm -f $(BIN_DIR)/*.o
-#
-#objects : 
-#	@mkdir -p $(BIN_DIR)
-#	@$(MAKE) -C support
+vpath %.cc $(MODULES)
+vpath %.cu $(MODULES)
 
+.PHONY: all goal clean
+
+all: goal
+
+goal: $(OBJ)
+	$(CC) $(CULDFLAGS) $(CCLDFLAGS) $^ -o $(KLAND_GC)
+
+$(OBJ_DIR):
+	@mkdir -p $(OBJ_DIR)
+
+$(OBJ_DIR)/%.cco: %.cc | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.cuo: %.cu | $(OBJ_DIR)
+	$(NVCC) $(CUINCFLAGS) -c $< -o $@
+
+clean:
+	-rm -rf $(OBJ_DIR)/*

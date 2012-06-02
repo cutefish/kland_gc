@@ -3,7 +3,7 @@
 
 #include <cuda_runtime_api.h>
 
-#include "support/ErrorCode.h"
+#include "support/Exception.h"
 
 namespace cudaerr {
 
@@ -57,7 +57,9 @@ enum CudaErrEnum
 
 class CudaErrCategory : public support::ErrorCategory {
  public:
-  typedef errc::CudaErrEnum type;
+  typedef cudaerr::CudaErrEnum type;
+
+  CudaErrCategory() { }
 
   virtual const char* name() const {
     return "cuda_error";
@@ -76,8 +78,8 @@ namespace cuda {
 static inline void checkCall(cudaError_t error, 
                              std::string message="") {
   if (error) {
-    throw Exception(error,
-                    getErrorCategory<CudaErrCategory>(), 
+    throw support::Exception(error,
+                    support::getErrorCategory<CudaErrCategory>(), 
                     message);
   }
 }

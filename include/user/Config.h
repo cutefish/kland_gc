@@ -12,22 +12,20 @@ class Config {
          std::string log_root,
          std::string out_root);
 
-  ~Config();
-
   /*** getter ***/
   const std::vector<std::string>& temp_list() const;
   const std::vector<std::string>& cont_list() const;
   const std::vector<std::string>& channel_list() const;
   const std::string& special_channel() const;
-  const int temp_npts() const;
-  const int cont_npts() const;
-  const float temp_tbefore() const;
-  const float temp_tafter() const;
-  const float sample_rate() const;
+  int temp_npts() const;
+  int cont_npts() const;
+  float temp_tbefore() const;
+  float temp_tafter() const;
+  float sample_rate() const;
   const std::string& snr_name() const;
-  const float snr_thr() const;
-  const float mad_ratio() const;
-  const int num_chnlThr() const;
+  float snr_thr() const;
+  float mad_ratio() const;
+  int num_chnlThr() const;
   const std::string& log_root() const;
   const std::string& out_root() const;
 

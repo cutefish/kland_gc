@@ -13,16 +13,16 @@ void* malloc(const size_t n, const char* message="");
 
 void free(void* ptr, const char* message="");
 
-inline void memcpyH2D(void* dst, const void* src, const size_t count,
+void memcpyH2D(void* dst, const void* src, const size_t count,
                       const char* message="");
 
-inline void memcpyD2H(void* dst, const void* src, const size_t count,
+void memcpyD2H(void* dst, const void* src, const size_t count,
                       const char* message="");
 
-inline void memcpyD2D(void* dst, const void* src, const size_t count,
+void memcpyD2D(void* dst, const void* src, const size_t count,
                       const char* message="");
 
-inline void memcpyH2H(void* dst, const void* src, const size_t count,
+void memcpyH2H(void* dst, const void* src, const size_t count,
                       const char* message="");
 
 } /* namespace cuda */

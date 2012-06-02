@@ -1,11 +1,12 @@
 #include <iostream>
 
-#include "Config.h"
-#include "Hosts.h"
 #include "support/Logging.h"
+#include "user/Config.h"
+#include "user/Hosts.h"
 
 static void usage() {
-  std::cerr<<"Usage: kland_gc <config_path> <log_root> <out_root>"<<endl;
+  std::cerr << "Usage: kland_gc <config_path> <log_root> <out_root>"
+      << '\n';
 }
 
 int main(int argc, char* argv[]) {

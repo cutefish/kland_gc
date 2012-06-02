@@ -27,20 +27,46 @@ DeviceProperties::DeviceProperties(const unsigned deviceID) {
 }
 
 /* getter/setter */
-const std::string & name() const { return m_name; }
-const int maxThreadsPerBlock() const { return m_maxThreadsPerBlock; }
+const std::string & DeviceProperties::name() const { 
+	return m_name; 
+}
+int DeviceProperties::maxThreadsPerBlock() const { 
+	return m_maxThreadsPerBlock; 
+}
 //const Vector3<int> & getMaxBlockSize() const;
 //const Vector3<int> & getMaxGridSize() const;
-const size_t shmemSizePerBlock() const { return m_sharedMemPerBlock; }
-const size_t constantMemorySize() const { return m_totalConstantMemory; }
-const int warpSize() const { return m_warpSize; }
-const int memoryPitch() const { return m_memPitch; }
-const int numRegistersPerBlock() const { return m_regsPerBlock; }
-const int clockRate() const { return m_clockRate; }
-const size_t textureAlignment() const { return m_textureAlign; }
-const size_t globalMemorySize() const { return m_totalMemBytes; }
-const int capabilityMajor() const { return m_major; }
-const int capabilityMinor() const { return m_minor; }
-const int numMultiProcessors() const { return m_multiProcessorCount; }
+size_t DeviceProperties::shmemSizePerBlock() const { 
+	return m_sharedMemPerBlock; 
+}
+size_t DeviceProperties::constantMemorySize() const { 
+	return m_totalConstantMemory; 
+}
+int DeviceProperties::warpSize() const { 
+	return m_warpSize; 
+}
+int DeviceProperties::memoryPitch() const { 
+	return m_memPitch; 
+}
+int DeviceProperties::numRegistersPerBlock() const { 
+	return m_regsPerBlock; 
+}
+int DeviceProperties::clockRate() const { 
+	return m_clockRate; 
+}
+size_t DeviceProperties::textureAlignment() const { 
+	return m_textureAlign; 
+}
+size_t DeviceProperties::globalMemorySize() const { 
+	return m_totalMemBytes; 
+}
+int DeviceProperties::capabilityMajor() const { 
+	return m_major; 
+}
+int DeviceProperties::capabilityMinor() const { 
+	return m_minor; 
+}
+int DeviceProperties::numMultiProcessors() const { 
+	return m_multiProcessorCount; 
+}
 
 } /* namespace cuda */

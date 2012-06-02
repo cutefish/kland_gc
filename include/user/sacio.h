@@ -4,7 +4,7 @@
 #include <fstream>
 #include <string>
 
-#include "sac.h"
+#include "user/sac.h"
 
 class SacInput {
  public:
@@ -19,7 +19,7 @@ class SacInput {
   void read(char* ptr, size_t pos, size_t size);
 
  private:
-  string m_name;
+  std::string m_name;
   SACHEAD m_header;
   std::ifstream m_ifs;
 };

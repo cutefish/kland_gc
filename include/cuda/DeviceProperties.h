@@ -21,20 +21,20 @@ class DeviceProperties
   /*** member funcitons ***/
   /* getter/setter */
   const std::string & name() const;
-  const int maxThreadsPerBlock() const;
+  int maxThreadsPerBlock() const;
   //const Vector3<int> & getMaxBlockSize() const;
   //const Vector3<int> & getMaxGridSize() const;
-  const size_t shmemSizePerBlock() const;
-  const size_t constantMemorySize() const;
-  const int warpSize() const;
-  const int memoryPitch() const;
-  const int numRegistersPerBlock() const;
-  const int clockRate() const;
-  const size_t textureAlignment() const;
-  const size_t globalMemorySize() const;
-  const int capabilityMajor() const;
-  const int capabilityMinor() const;
-  const int numMultiProcessors() const;
+  size_t shmemSizePerBlock() const;
+  size_t constantMemorySize() const;
+  int warpSize() const;
+  int memoryPitch() const;
+  int numRegistersPerBlock() const;
+  int clockRate() const;
+  size_t textureAlignment() const;
+  size_t globalMemorySize() const;
+  int capabilityMajor() const;
+  int capabilityMinor() const;
+  int numMultiProcessors() const;
  private:
   /// The name of the device.
   std::string m_name;

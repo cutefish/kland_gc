@@ -15,13 +15,13 @@ enum UserErrEnum {
   sac_header_error,
   sac_read_error,
   sac_write_error,
-  mpi_error,
-  temp_invalid_start_time, 
+  mpi_call_error,
+  temp_invalid_start_time
 }; // end StdErrEnum
 
 } /* namespace errc */
 
-const std::string getErrString(int ev) {
+inline const std::string getErrString(int ev) {
   std::vector<std::string> errs;
   errs.push_back("User: File not open. ");
   errs.push_back("User: SAC header read error. ");
@@ -38,6 +38,8 @@ class UserErrCategory : public support::ErrorCategory {
  public:
   typedef usererr::UserErrEnum type;
 
+  UserErrCategory() { }
+
   virtual const char* name() const {
     return "user_error";
   }
@@ -50,10 +52,10 @@ class UserErrCategory : public support::ErrorCategory {
 
 namespace user {
 
-static inline void throwError(bool is_sucess, usererr::UserErrEnum errno,
+static inline void throwError(bool is_sucess, usererr::UserErrEnum error,
                               std::string message="") {
   if (is_sucess) return;
-  throw support::Exception(errno,
+  throw support::Exception(error,
                            support::getErrorCategory<UserErrCategory>(),
                            message);
 }

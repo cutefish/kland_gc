@@ -8,11 +8,11 @@
 #include "support/StringUtils.h"
 
 /* readList() */
-inline void readList(std::string list_file,
+void readList(std::string list_file,
               std::vector<std::string>& list) {
   std::ifstream if_list;
   std::string line;
-  if_list.open(list_file);
+  if_list.open(list_file.c_str());
   user::throwError(if_list.is_open(), usererr::file_not_open, list_file);
   while(if_list.good()) {
     getline(if_list, line);
@@ -21,7 +21,7 @@ inline void readList(std::string list_file,
 }
 
 /* fill() */
-inline void Config::fill(std::string key, std::string value) {
+void Config::fill(std::string key, std::string value) {
   if (key == "temp_list_file")
     readList(key, m_tempList);
   else if (key == "cont_list_file")
@@ -49,19 +49,20 @@ inline void Config::fill(std::string key, std::string value) {
 }
 
 /* Config() */
-inline Config::Config(std::string config_file,
+Config::Config(std::string config_file,
                std::string log_root,
                std::string out_root) {
   std::ifstream if_config;
   std::string line;
-  if_config.open(config_file);
-  user::throwError(if_list.is_open(), usererr::file_not_open, list_file);
+  if_config.open(config_file.c_str());
+  user::throwError(if_config.is_open(), 
+                   usererr::file_not_open, config_file);
 
   while(if_config.good()) {
     getline(if_config, line);
     if (line == "") continue;
-    std::vector<std::string> tokens = splitString(line, ':');
-    fill(tokens[0], tokens[1])
+    std::vector<std::string> tokens = support::splitString(line, ':');
+    fill(tokens[0], tokens[1]);
   }
 
   m_logRoot = log_root;
@@ -69,8 +70,8 @@ inline Config::Config(std::string config_file,
 }
 
 /* repr() */
-inline void Config::repr() {
-  stringstream ss;
+std::string Config::repr() {
+  std::stringstream ss;
   ss << "Config: " << '\n';
   ss << "Temp list size: " << m_tempList.size() << '\n';
   ss << "Cont list size: " << m_contList.size() << '\n';
@@ -91,21 +92,29 @@ inline void Config::repr() {
 }
 
 /* getter */
-const std::vector<std::string>& temp_list() const { return  m_tempList; }
-const std::vector<std::string>& cont_list() const { return m_contList; }
-const std::vector<std::string>& channel_list() const { return m_channelList; }
-const std::string& special_channel() const { return m_specialChannel; }
-const int temp_npts() const { return m_tempNpts; }
-const int cont_npts() const { return m_contNpts; }
-const float temp_tbefore() const { return m_tempTbefore; }
-const float temp_tafter() const { return m_tempTafter; }
-const float sample_rate() const { 
+const std::vector<std::string>& Config::temp_list() const { 
+  return  m_tempList; 
+}
+const std::vector<std::string>& Config::cont_list() const { 
+  return m_contList; 
+}
+const std::vector<std::string>& Config::channel_list() const { 
+  return m_channelList; 
+}
+const std::string& Config::special_channel() const { 
+  return m_specialChannel; 
+}
+int Config::temp_npts() const { return m_tempNpts; }
+int Config::cont_npts() const { return m_contNpts; }
+float Config::temp_tbefore() const { return m_tempTbefore; }
+float Config::temp_tafter() const { return m_tempTafter; }
+float Config::sample_rate() const { 
   return m_tempNpts / (m_tempTbefore + m_tempTafter); 
 }
-const std::string& snr_name() const { return m_snrName; }
-const float snr_thr() const { return m_snrThr; }
-const float mad_ratio() const { return m_madRatio; }
-const int mad_ratio() const { return m_madRatio; }
-const std::string& log_root() const { return m_logRoot; }
-const std::string& out_root() const { return m_outRoot; }
+const std::string& Config::snr_name() const { return m_snrName; }
+float Config::snr_thr() const { return m_snrThr; }
+float Config::mad_ratio() const { return m_madRatio; }
+int Config::num_chnlThr() const { return m_numChnlThr; }
+const std::string& Config::log_root() const { return m_logRoot; }
+const std::string& Config::out_root() const { return m_outRoot; }
 

@@ -14,7 +14,7 @@ static const unsigned BlockSizeX = 512;
 static const unsigned GridSizeX = 56;
 
 /* getTempMeanVar() */
-inline void getTempMeanVar(float* data, unsigned size, float& mean, float& var) {
+void getTempMeanVar(float* data, unsigned size, float& mean, float& var) {
   mean = 0;
   for (int i = 0; i < size; ++i) {
     mean += data[i];
@@ -28,7 +28,7 @@ inline void getTempMeanVar(float* data, unsigned size, float& mean, float& var) 
 }
 
 /* cuda: ContMeanVarKernel() */
-__global__ ContMeanVarKernel(float* data, unsigned size, unsigned window_size,
+__global__ void ContMeanVarKernel(float* data, unsigned size, unsigned window_size,
                              float* mean, float* var) {
   unsigned shift = gridDim.x * blockDim.x;
   unsigned offset = blockDim.x * blockIdx.x + threadIdx.x;
@@ -53,16 +53,16 @@ void getContMeanVar(float* data, unsigned size, unsigned window_size,
                     float* mean, float* var) {
   ContMeanVarKernel<<<GridSizeX, BlockSizeX>>>(data, size, window_size,
                                                mean, var);
-  synchronize("getContMeanVar");
+  cuda::synchronize("getContMeanVar");
 }
 
 /* clearStack() */
 void clearStack(float* data ,unsigned size) {
-  cuda::checkCall(cuResetMemory((void*) data, size * sizeof(float)));
+  cuda::checkCall(cudaMemset((void*) data, 0, size * sizeof(float)));
 }
 
 /* cuda: AbsSubsMADKernel() */
-__global__ AbsSubsMADKernel(float* data, unsigned size, float* median) {
+__global__ void AbsSubsMADKernel(float* data, unsigned size, float* median) {
   unsigned shift = gridDim.x * blockDim.x;
   unsigned offset = blockDim.x * blockIdx.x + threadIdx.x;
   for (int i = offset; i < size; i += shift) {
@@ -75,19 +75,19 @@ float getMAD(float* data, unsigned size) {
   //sort first
   thrust::device_ptr<float> dev_data(data);
   thrust::sort(dev_data, dev_data + size);
-  synchronize("thrust_sort1");
+  cuda::synchronize("thrust_sort1");
   //get median
-  float* median = cuda::malloc(sizeof(float));
-  cuda::memcpyD2D(median, data[size/2], sizeof(float), "getMAD");
+  float* median = reinterpret_cast<float*>(cuda::malloc(sizeof(float)));
+  cuda::memcpyD2D(median, data + size / 2, sizeof(float), "getMAD");
   //abs(data[i] - median)
   AbsSubsMADKernel<<<GridSizeX, BlockSizeX>>>(data, size, median);
-  synchronize("AbsSubsMADKernel");
+  cuda::synchronize("AbsSubsMADKernel");
   //sort again
   thrust::sort(dev_data, dev_data + size);
-  synchronize("thrust_sort2");
+  cuda::synchronize("thrust_sort2");
   //get mad result
   float mad;
-  cuda::memcpyD2H((void*)&mad, data[size/2], sizeof(float), "getMAD");
+  cuda::memcpyD2H((void*)&mad, data + size / 2, sizeof(float), "getMAD");
   //clean up
   cuda::free(median);
   return mad;
@@ -97,7 +97,7 @@ float getMAD(float* data, unsigned size) {
 void select(float* data, unsigned size, 
             float mad, float ratio, 
             float sample_rate, unsigned num_valid_channel, 
-            std::ofstream out) {
+			std::ofstream& out) {
   out << "mad value: " << mad << '\n';
   for (int i = 0; i < size; ++i) {
     if (data[i] > (mad * ratio)) {

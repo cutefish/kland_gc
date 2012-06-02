@@ -44,6 +44,6 @@ float getMAD(float* data, unsigned size);
 void select(float* data, unsigned size, 
             float mad, float ratio, 
             float sample_rate, unsigned num_valid_channel, 
-            std::ofstream out);
+            std::ofstream& out);
 
 #endif /* USER_COMPUTE_H_ */

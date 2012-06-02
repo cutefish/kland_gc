@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdlib>
 #include <vector>
 #include <fstream>
@@ -9,7 +10,7 @@
 
 /* helper function, isSpecial() */
 bool isSpecial(std::string path, Config cfg) {
-  return path.find(cfg.special_channel()) != string::npos;
+  return path.find(cfg.special_channel()) != std::string::npos;
 }
 
 /* readTemplate() */
@@ -21,12 +22,12 @@ void readTemplate(std::string path, Config cfg, float* data) {
   else event_time = temp_sac.header().t2;
   float start_time = event_time - cfg.temp_tbefore();
   if (start_time < 0)
-    throwError(0, usererr::temp_invalid_start_time, path);
+    user::throwError(0, usererr::temp_invalid_start_time, path);
   float end_time = event_time - cfg.temp_tafter();
   float init_time = temp_sac.header().b;
   size_t start_bytes = rint((start_time - init_time) / delta) * sizeof(float);
   size_t window_bytes = rint((end_time - start_time) / delta) * sizeof(float);
-  temp_sac.read(data, start_bytes, window_bytes);
+  temp_sac.read(reinterpret_cast<char*>(data), start_bytes, window_bytes);
 }
 
 /* readContinuous() */
@@ -39,7 +40,7 @@ size_t readContinuous(std::string path, Config cfg, float* data) {
   //choose the smaller 
   npts = (npts > cfg.cont_npts()) ? cfg.cont_npts() : npts;
   size_t bytes = npts * sizeof(float);
-  cont_sac.read(data, 0, bytes);
+  cont_sac.read(reinterpret_cast<char*>(data), 0, bytes);
   return npts;
 }
 
@@ -47,14 +48,15 @@ size_t readContinuous(std::string path, Config cfg, float* data) {
 float readSNR(std::string path, std::string channel) {
   std::ifstream ifs;
   std::string line;
-  ifs.open(path);
+  ifs.open(path.c_str());
   if (ifs.is_open()) {
     while (ifs.good()) {
       getline(ifs, line);
-      if (line.find(channel) != string::npos) {
-        std::vector<std::string> tokens = splitString(line, ' ');
+      if (line.find(channel) != std::string::npos) {
+        std::vector<std::string> tokens = support::splitString(line, ' ');
         return atof(tokens[1].c_str());
       }
     }
   }
+  return 0;
 }

@@ -3,6 +3,7 @@
 
 #include "mpi.h"
 
+#include "cuda/DeviceProperties.h"
 #include "support/TimingEvent.h"
 
 struct RunEnv {
@@ -17,7 +18,7 @@ struct RunEnv {
   float* host_pCont;
   float* host_pTemp;
   int num_temps;
-  cuda::DeviceProperties dev_prop;
+  cuda::DeviceProperties* dev_prop;
 };
 
 /* init()
