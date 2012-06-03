@@ -2,9 +2,9 @@ include ../Defines.mk
 
 DEBUG =
 CFLAGS = $(DEBUG) -O3 -I$(INCLUDE_DIR)
-CUINCFLAGS = -I/sw/keeneland/cuda/4.1/linux_binary/include -I$(INCLUDE_DIR)
-CULDFLAGS = -fPIC -lcudart -lcuda -L/sw/keeneland/cuda/4.1/linux_binary/lib64
-CCLDFLAGS = -lm -lrt
+CUINCFLAGS = -I$(CUDAINCPATH) -I$(INCLUDE_DIR)
+CULDFLAGS = -fPIC -lcudart -lcuda -L$(CUDALIBPATH)
+CCLDFLAGS = -lm -lrt -lmpi_cxx
 
 AR = ar
 RANLIB = ranlib
