@@ -75,4 +75,5 @@ class PBSOption:
 
 def submitWork(script):
     cmd = 'qsub %s' %script
-    #subprocess.check_output(cmd.split(' '))
+    print cmd
+    ret = subprocess.call(cmd.split(' '))

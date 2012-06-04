@@ -39,7 +39,7 @@ def runWork(m_info, s_timestamp):
     script_dir = '%s/%s/scripts' %(work_dir, s_timestamp)
     config_dir = '%s/%s/partition/config' %(work_dir, s_timestamp)
     common.makeDirOrPass(script_dir)
-    worklist = common.glob('%s/config[0-9]*' %config_dir)
+    worklist = common.glob('%s/config*' %config_dir)
 
     #create scripts
     for work in worklist:
@@ -67,7 +67,7 @@ def runWork(m_info, s_timestamp):
 
     #launch
     for work in worklist:
-        launch_id = common.getBasename(work).rstrip('config')
+        launch_id = common.getBasename(work).lstrip('config')
         logger.info('pbs submit work: %s/pbslaunch%s.sh' %(
             script_dir, launch_id))
         pbs.submitWork('%s/pbslaunch%s.sh' %(script_dir, launch_id))
@@ -83,7 +83,7 @@ def run():
     if idx == 0:
         s_timestamp = workdir.setup(m_info)
     else:
-        s_timestamp = exist_runs[idx - 1]
+        s_timestamp = common.getBasename(exist_runs[idx - 1])
         workdir.makeWorkDirs(m_info, s_timestamp)
 
     runWork(m_info, s_timestamp)

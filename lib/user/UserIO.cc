@@ -61,6 +61,6 @@ float readSNR(std::string path, std::string channel) {
   }
   else {
     user::throwError(0, usererr::file_not_open, path);
-    return 0;
   }
+  return 0;
 }

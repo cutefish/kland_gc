@@ -233,12 +233,15 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
   const std::vector<std::string>& temp_list = cfg.temp_list();
   const std::vector<std::string>& ch_list = cfg.channel_list();
 
+  //only log temp info on first loop
+  bool first_temp_loop = true;
+
   //cont loop
   for (int ci = range.cont_start; ci < range.cont_end + 1; ++ci) {
     std::string cont_name = cont_list[ci];
 
     //track valid channels
-    std::vector<unsigned> valid_channels;
+    std::vector<int> valid_channels;
     for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
       valid_channels.push_back(0);
     }
@@ -287,18 +290,22 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
           snr = readSNR(path, chnl_name);
         }
         catch (support::Exception e) {
-          support::LogSys::getLogger("userLog").warning(
-              "Error read snr file: \n" + path + ". \nSet snr to 0\n\n");
+          if (first_temp_loop) {
+            support::LogSys::getLogger("userLog").warning(
+                "Error read snr file: \n" + path + ". \nSet snr to 0\n\n");
+          }
           snr = 0;
         }
         if (snr < cfg.snr_thr()) {
-          std::stringstream ss;
-          ss << "template channel under threshold:\n";
-          ss << temp_name + "/" + chnl_name + "\n";
-          ss << "threshold: " + 
-              support::Type2String<float>(cfg.snr_thr()) + '\n';
-          ss << "value: " + support::Type2String<float>(snr) << "\n\n";
-          support::LogSys::getLogger("userLog").warning(ss.str());
+          if (first_temp_loop) {
+            std::stringstream ss;
+            ss << "template channel under threshold:\n";
+            ss << temp_name + "/" + chnl_name + "\n";
+            ss << "threshold: " + 
+                support::Type2String<float>(cfg.snr_thr()) + '\n';
+            ss << "value: " + support::Type2String<float>(snr) << "\n\n";
+            support::LogSys::getLogger("userLog").warning(ss.str());
+          }
           continue;
         }
 
@@ -311,12 +318,15 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         }
         catch (support::Exception e) {
           //logging
-          support::LogSys::getLogger("userLog").warning(
-              "Error read template file: " + path + "\n\n");
+          if (first_temp_loop) {
+            support::LogSys::getLogger("userLog").warning(
+                "Error read template file: " + path + "\n\n");
+          }
           continue;
         }
 
-        valid_channels[ti] ++;
+        valid_channels[ti - range.temp_start] ++;
+
         //calculate mean and var
         float mean, var;
         support::TimingSys::restartEvent("calcTemplateMeanVar");
@@ -335,18 +345,20 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       }
     }
 
+    first_temp_loop = false;
+
     //select
     for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
       std::string temp_name = cfg.temp_list()[ti];
       //check valid channels
-      if (valid_channels[ti] < cfg.num_chnlThr()) {
+      if (valid_channels[ti - range.temp_start] < cfg.num_chnlThr()) {
         //logging
         std::stringstream ss;
         ss << "Number of valid channel under threshold: \n";
         ss << cont_name << "\n";
         ss << temp_name << "\n";
         ss << "valid channel number: ";
-        ss << support::Type2String<unsigned>(valid_channels[ti]) + "\n";
+        ss << support::Type2String<unsigned>(valid_channels[ti - range.temp_start]) + "\n";
         ss << "threshold: ";
         ss << support::Type2String<unsigned>(cfg.num_chnlThr()) + "\n\n";
         support::LogSys::getLogger("userLog").warning(ss.str());
