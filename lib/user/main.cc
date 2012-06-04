@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
     usage();
     exit(1);
   }
+
   Config cfg(argv[1], argv[2], argv[3]);
 
   RunEnv env = init(cfg);

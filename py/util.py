@@ -95,8 +95,8 @@ def _chooseUtil(name):
         prompt = """
         Please input channel pattern.
         Example:
-        /%s.%s.%s.SAC.%s//EH;ELM,ENG,LIN,HAT,RED,YOU;EN2,EH3,EHZ;bp10_40/
-        /%s.%s.%s.SAC.%s/%s/EH;ELM,ENG,LIN,HAT,RED,YOU;EN2,EH3,EHZ;bp10_40/;,
+        /%s.%s.%s.SAC.%s//EN;ELM,ENG,LIN,HAT,RED,YOU;EH2,EH3,EHZ;bp10_40/
+        /%s.%s.%s.SAC.%s/%s/EN;ELM,ENG,LIN,HAT,RED,YOU;EN2,EH3,EHZ;bp10_40/;,
         """
         print prompt
         pattern_string = raw_input('Channel Pattern:')

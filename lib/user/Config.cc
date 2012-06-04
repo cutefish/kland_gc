@@ -23,11 +23,11 @@ void readList(std::string list_file,
 /* fill() */
 void Config::fill(std::string key, std::string value) {
   if (key == "temp_list_file")
-    readList(key, m_tempList);
+    readList(value, m_tempList);
   else if (key == "cont_list_file")
-    readList(key, m_contList);
+    readList(value, m_contList);
   else if (key == "channel_list_file")
-    readList(key, m_channelList);
+    readList(value, m_channelList);
   else if (key == "special_channel")
     m_specialChannel = value;
   else if (key == "temp_npts")
@@ -45,7 +45,7 @@ void Config::fill(std::string key, std::string value) {
   else if (key == "mad_ratio")
     m_madRatio = support::String2Type<float>(value);
   else if (key == "num_chnlThr")
-    m_madRatio = support::String2Type<int>(value);
+    m_numChnlThr = support::String2Type<int>(value);
 }
 
 /* Config() */

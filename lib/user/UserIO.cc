@@ -23,10 +23,11 @@ void readTemplate(std::string path, Config cfg, float* data) {
   float start_time = event_time - cfg.temp_tbefore();
   if (start_time < 0)
     user::throwError(0, usererr::temp_invalid_start_time, path);
-  float end_time = event_time - cfg.temp_tafter();
+  float end_time = event_time + cfg.temp_tafter();
   float init_time = temp_sac.header().b;
   size_t start_bytes = rint((start_time - init_time) / delta) * sizeof(float);
   size_t window_bytes = rint((end_time - start_time) / delta) * sizeof(float);
+
   temp_sac.read(reinterpret_cast<char*>(data), start_bytes, window_bytes);
 }
 
@@ -58,5 +59,8 @@ float readSNR(std::string path, std::string channel) {
       }
     }
   }
-  return 0;
+  else {
+    user::throwError(0, usererr::file_not_open, path);
+    return 0;
+  }
 }
