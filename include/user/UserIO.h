@@ -5,17 +5,21 @@
 
 #include "user/Config.h"
 
-struct TempConfig {
+struct DataConfig {
+  float delta;
+  float b;
+  float t;
+  size_t npts;
 };
 
 /* readTemplate()
  */
-void readTemplate(std::string path, Config cfg, float* data);
+DataConfig readTemplate(std::string path, Config cfg, float* data);
 
 /* readContinuous()
  * Read continuous and return actual size.
  */
-size_t readContinuous(std::string path, Config cfg, float* data);
+DataConfig readContinuous(std::string path, Config cfg, float* data);
 
 /* readSNR()
  */

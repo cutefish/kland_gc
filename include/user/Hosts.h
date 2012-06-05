@@ -10,6 +10,7 @@ struct RunEnv {
   int rank;
   int size;
   int dev_rank;
+  float* dev_pTemp;
   float* dev_pCont;
   float* dev_pContMean;
   float* dev_pContVar;

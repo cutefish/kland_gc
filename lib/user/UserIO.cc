@@ -14,7 +14,7 @@ bool isSpecial(std::string path, Config cfg) {
 }
 
 /* readTemplate() */
-void readTemplate(std::string path, Config cfg, float* data) {
+DataConfig readTemplate(std::string path, Config cfg, float* data) {
   SacInput temp_sac(path);
   float delta = temp_sac.header().delta;
   float event_time;
@@ -29,10 +29,16 @@ void readTemplate(std::string path, Config cfg, float* data) {
   size_t window_bytes = rint((end_time - start_time) / delta) * sizeof(float);
 
   temp_sac.read(reinterpret_cast<char*>(data), start_bytes, window_bytes);
+
+  DataConfig ret;
+  ret.delta = delta;
+  ret.t = event_time;
+
+  return ret;
 }
 
 /* readContinuous() */
-size_t readContinuous(std::string path, Config cfg, float* data) {
+DataConfig readContinuous(std::string path, Config cfg, float* data) {
   SacInput cont_sac(path);
   float delta = cont_sac.header().delta;
   float init_time = cont_sac.header().b;
@@ -42,7 +48,12 @@ size_t readContinuous(std::string path, Config cfg, float* data) {
   npts = (npts > cfg.cont_npts()) ? cfg.cont_npts() : npts;
   size_t bytes = npts * sizeof(float);
   cont_sac.read(reinterpret_cast<char*>(data), 0, bytes);
-  return npts;
+
+  DataConfig ret;
+  ret.b = cont_sac.header().b;
+  ret.npts = npts;
+
+  return ret;
 }
 
 /* readSNR() */

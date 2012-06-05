@@ -19,10 +19,10 @@ void getTempMeanVar(float* data, unsigned size, float& mean, float& var);
 void getContMeanVar(float* data, unsigned size, unsigned window_size, 
                     float* mean, float* var);
 
-/* clearStack()
- * Clear the correlation stack array.
+/* clearDevData()
+ * Clear the device data.
  */
-void clearStack(float* data, unsigned size);
+void clearDevData(float* data, unsigned size);
 
 /* calcAndStackCorr()
  * Calculate and stack the correlation result.

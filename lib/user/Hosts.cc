@@ -43,21 +43,24 @@ RunEnv init(Config cfg) {
 
   //initialize gpu card
   env.dev_prop = new cuda::DeviceProperties(env.dev_rank);
-//  cuda::setDevice(env.dev_rank);
+  cuda::setDevice(env.dev_rank);
 
   //calculate and allocate memory
   size_t capacity = env.dev_prop->globalMemorySize();
-  size_t left = capacity;
-  size_t req;
+  size_t left;
+  size_t cont_req;
   ///device: one continuous waveform at a time
-  req = cfg.cont_npts() * sizeof(float);
-  left = left - req * 5; // an extra for sorting
-  env.num_temps = left / req;
-//  env.dev_pCont = reinterpret_cast<float*>(cuda::malloc(req));
-//  env.dev_pContMean = reinterpret_cast<float*>(cuda::malloc(req));
-//  env.dev_pContVar = reinterpret_cast<float*>(cuda::malloc(req));
-//  env.dev_pCorr = reinterpret_cast<float*>(cuda::malloc(req));
-//  env.dev_pStack = reinterpret_cast<float*>(cuda::malloc(env.num_temps * req));
+  temp_req = cfg.temp_npts() * sizeof(float);
+  cont_req = cfg.cont_npts() * sizeof(float);
+  left = capacity -temp_req - cont_req * 5; // an extra for sorting
+  env.num_temps = left / cont_req; //all the left for stack
+  env.dev_pTemp = reinterpret_cast<float*>(cuda::malloc(temp_req));
+  env.dev_pCont = reinterpret_cast<float*>(cuda::malloc(cont_req));
+  env.dev_pContMean = reinterpret_cast<float*>(cuda::malloc(cont_req));
+  env.dev_pContVar = reinterpret_cast<float*>(cuda::malloc(cont_req));
+  env.dev_pCorr = reinterpret_cast<float*>(cuda::malloc(cont_req));
+  env.dev_pStack = reinterpret_cast<float*>(cuda::malloc(env.num_temps * 
+                                                         cont_req));
   ///host
   env.host_pCont = new float[cfg.cont_npts()];
   env.host_pTemp = new float[cfg.temp_npts()];
@@ -107,11 +110,12 @@ void finalize(RunEnv env) {
                    "errorno: " + support::Type2String<int>(errno));
   
   //free pointers
-//  cuda::free(env.dev_pCont);
-//  cuda::free(env.dev_pContMean);
-//  cuda::free(env.dev_pContVar);
-//  cuda::free(env.dev_pCorr);
-//  cuda::free(env.dev_pStack);
+  cuda::free(env.dev_pTemp);
+  cuda::free(env.dev_pCont);
+  cuda::free(env.dev_pContMean);
+  cuda::free(env.dev_pContVar);
+  cuda::free(env.dev_pCorr);
+  cuda::free(env.dev_pStack);
   delete [] env.host_pCont;
   delete [] env.host_pTemp;
 
@@ -246,24 +250,33 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       valid_channels.push_back(0);
     }
 
-    //cont size
-    size_t cont_npts;
+    //data config
+    DataConfig cont_cfg, temp_cfg;
+    size_t max_cont_npts = 0;
 
     //clear stack
-//    clearStack(env.dev_pStack, 
-//               env.num_temps * cfg.cont_npts() * sizeof(float));
+    clearDevData(env.dev_pStack, 
+                 env.num_temps * cfg.cont_npts());
     
     //channel loop
     for (int chi = 0; chi < ch_list.size(); ++chi) {
+      //clear cont data
+      clearDevData(env.dev_pCont, cfg.cont_npts());
+      clearDevData(env.dev_pContMean, cfg.cont_npts());
+      clearDevData(env.dev_pContVar, cfg.cont_npts());
+
       std::string chnl_name = ch_list[chi];
       //read cont data
       std::string path = cont_name + "/" + chnl_name;
       try {
         support::TimingSys::restartEvent("readContinuous");
-        size_t npts = readContinuous(path, cfg, env.host_pCont);
+        cont_cfg = readContinuous(path, cfg, env.host_pCont);
         support::TimingSys::pauseEvent("readContinuous");
-        //choose the larger as npts
-        cont_npts = (cont_npts > npts) ? cont_npts : npts;
+        //save the largest of all channels
+        //note: the readContinuous chooses the smaller of
+        // config file and the real npts.
+        max_cont_npts = (max_cont_npts > cont_cfg.npts) ? 
+            max_cont_npts : cont_cfg.npts;
       }
       catch (support::Exception e) {
         //logging
@@ -272,16 +285,21 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         continue;
       }
       //copy to device
-//      cuda::memcpyH2D(env.dev_pCont, env.host_pCont, 
-//                      cfg.cont_npts() * sizeof(float));
+      cuda::memcpyH2D(env.dev_pCont, env.host_pCont, 
+                      cont_cfg.npts * sizeof(float));
       //calculate mean and var
-//      support::TimingSys::restartEvent("calcContinuousMeanVar");
-//      getContMeanVar(env.dev_pCont, cfg.cont_npts(), cfg.temp_npts(),
-//                     env.dev_pContMean, env.dev_pContVar);
-//      support::TimingSys::pauseEvent("calcContinuousMeanVar");
+      support::TimingSys::restartEvent("calcContinuousMeanVar");
+      getContMeanVar(env.dev_pCont, cont_cfg.npts, cfg.temp_npts(),
+                     env.dev_pContMean, env.dev_pContVar);
+      support::TimingSys::pauseEvent("calcContinuousMeanVar");
 
       //temp loop
       for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
+        //clear temp data
+        clearDevData(env.dev_pTemp, cfg.temp_npts());
+        //clear cont data
+        clearDevData(env.dev_pCorr, cfg.cont_npts());
+
         //test snr
         std::string temp_name = cfg.temp_list()[ti];
         std::string path = temp_name + "/" + cfg.snr_name();
@@ -313,7 +331,7 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         path = temp_name + "/" + chnl_name;
         try {
           support::TimingSys::restartEvent("readTemplate");
-          readTemplate(path, cfg, env.host_pTemp);
+          temp_cfg = readTemplate(path, cfg, env.host_pTemp);
           support::TimingSys::pauseEvent("readTemplate");
         }
         catch (support::Exception e) {
@@ -325,6 +343,20 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
           continue;
         }
 
+        //calculate stack shift
+        //if it is less than zero, discard.
+        int stack_shift = rint(temp_cfg.t - cfg.temp_tbefore() -
+                               cont_cfg.b) / temp_cfg.delta;
+        if (stack_shift < 0) {
+          std::stringstream ss;
+          ss << "Stack shift less than zero: \n";
+          ss << cont_name << "\n";
+          ss << temp_name << "\n";
+          support::LogSys::getLogger("userLog").warning(ss.str());
+          continue;
+        }
+
+        //increase number of valid channel.
         valid_channels[ti - range.temp_start] ++;
 
         //calculate mean and var
@@ -332,20 +364,25 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         support::TimingSys::restartEvent("calcTemplateMeanVar");
         getTempMeanVar(env.host_pTemp, cfg.temp_npts(), mean, var);
         support::TimingSys::pauseEvent("calcTemplateMeanVar");
+        //copy to device
+        cuda::memcpyH2D(env.dev_pTemp, env.host_pTemp, 
+                        cfg.temp_npts() * sizeof(float));
         //calculate correlation
-        //... on ti 
         support::TimingSys::restartEvent("calcCorr");
-
+        calcCorr(env.dev_pCorr, env.dev_pTemp, env.dev_pCont,
+                 cont_cfg.npts, cfg.temp_npts(),
+                 mean, var, env.dev_pContMean, env.dev_pContVar);
         support::TimingSys::pauseEvent("calcCorr");
         //stack correlation
-        //... on ti
+        //note: cont_cfg.npts has the smaller of config and real npts,
+        //corr_size is cont_size - temp_size
         support::TimingSys::restartEvent("stackCorr");
-
+        stack(env.dev_pCorr, 
+              env.dev_pStack + (ti - range.temp_start) * cfg.cont_npts(),
+              cont_cfg.npts - cfg.temp_npts(), stack_shift);
         support::TimingSys::pauseEvent("stackCorr");
       }
     }
-
-    first_temp_loop = false;
 
     //select
     for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
@@ -366,14 +403,14 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       }
       
       //copy back
-//      cuda::memcpyD2H(env.host_pCont, 
-//                      env.dev_pStack + 
-//                      (ti - range.temp_start) * cfg.cont_npts(),
-//                      cont_npts * sizeof(float));
+      cuda::memcpyD2H(env.host_pCont, 
+                      env.dev_pStack + 
+                      (ti - range.temp_start) * cfg.cont_npts(),
+                      cfg.cont_npts() * sizeof(float));
       //get MAD
-//      support::TimingSys::restartEvent("calcMAD");
-//      float mad = getMAD(env.dev_pStack, cfg.cont_npts());
-//      support::TimingSys::pauseEvent("calcMAD");
+      support::TimingSys::restartEvent("calcMAD");
+      float mad = getMAD(env.dev_pStack, cfg.cont_npts());
+      support::TimingSys::pauseEvent("calcMAD");
 
       //get path
       std::string cont_basename = support::splitString(cont_name, '/').back();
@@ -393,10 +430,12 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       support::TimingSys::restartEvent("select");
       // the select size cont_npts is the largest of all channels
       // min(cfg.npts(), real npts)
-//      select(env.host_pCont, cont_npts, mad, cfg.mad_ratio(),
-//             cfg.sample_rate(), valid_channels[ti], ofs);
+      select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
+             cfg.sample_rate(), valid_channels[ti], ofs);
       support::TimingSys::pauseEvent("select");
 
     }
+
+    first_temp_loop = false;
   }
 }

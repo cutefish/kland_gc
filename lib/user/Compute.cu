@@ -29,10 +29,10 @@ void getTempMeanVar(float* data, unsigned size, float& mean, float& var) {
 
 /* cuda: ContMeanVarKernel() */
 __global__ void ContMeanVarKernel(float* data, unsigned size, unsigned window_size,
-                             float* mean, float* var) {
+                                  float* mean, float* var) {
   unsigned shift = gridDim.x * blockDim.x;
   unsigned offset = blockDim.x * blockIdx.x + threadIdx.x;
-  for (int i = offset; i < size; i += shift) {
+  for (int i = offset; i < size - window_size; i += shift) {
     float m = 0;
     for (int j = 0; j < window_size; ++j) {
       m += data[i + j];
@@ -56,9 +56,73 @@ void getContMeanVar(float* data, unsigned size, unsigned window_size,
   cuda::synchronize("getContMeanVar");
 }
 
-/* clearStack() */
-void clearStack(float* data ,unsigned size) {
+/* clearDevData() */
+void clearDevData(float* data ,unsigned size) {
   cuda::checkCall(cudaMemset((void*) data, 0, size * sizeof(float)));
+}
+
+/* cuda: CorrKernel() */
+__global__ void CorrKernel(float* corr, float* temp, float* cont, 
+                           unsigned cont_size, unsigned temp_size, 
+                           float temp_mean, float temp_var,
+                           float* cont_mean, float* cont_var) {
+  unsigned shift = gridDim.x * blockDim.x;
+  unsigned offset = blockDim.x * blockIdx.x + threadIdx.x;
+  for (int i = offset; i < cont_size - temp_size; i += shift) {
+    float ex = temp_mean;
+    float ey = cont_mean[i];
+    float sx = temp_var;
+    float sy = cont_var[i];
+    float sxy = 0;
+    if (sx < 1.0e-5 || sy < 1.0e-5) {
+      corr[i] = 0;
+    }
+    else {
+      for (int j = 0; j < temp_size; ++j) {
+        float resx = temp[j] - ex;
+        float resy = cont[i + j] - ey;
+        sxy += resx * resy;
+      }
+      corr[i] = sxy / sqrtf(sx * sy);
+    }
+  }
+}
+
+/* calcCorr() */
+void calcCorr(float* corr, float* temp, float* cont,
+              unsigned cont_size, unsigned temp_size,
+              float temp_mean, float temp_var,
+              float* cont_mean, float* cont_var) {
+  CorrKernel<<<GridSizeX, BlockSizeX>>>(corr, temp, cont, 
+                                        cont_size, temp_size,
+                                        temp_mean, temp_var, 
+                                        cont_mean, cont_var);
+  cuda::synchronize("calcCorr");
+}
+
+/* cuda: StackKernel() */
+__global__ void StackKernel(float* corr, float* stack,
+                            unsigned corr_size, unsigned stack_shift) {
+  unsigned idx_shift = gridDim.x * blockDim.x;
+  unsigned idx_offset = blockDim.x * blockIdx.x + threadIdx.x;
+  for (int i = idx_offset; i < corr_size; i += idx_shift) {
+    float max = -2;
+    //if exists corr[i-1]
+    if (i > 0) max = corr[i - 1];
+    //max(corr[i-1], corr[i])
+    max = (max > corr[i]) ? max : corr[i];
+    //max(corr[i], corr[i+1])
+    if (i < corr_size - 1) max = (max > corr[i + 1]) ? max : corr[i + 1];
+    //add to stack;
+    if (i - stack_shift > 0) stack[i - stack_shift] += max;
+  }
+}
+
+/* stack() */
+void stack(float* corr, float* stack, 
+           unsigned corr_size, unsigned stack_shift) {
+  StackKernel<<<GridSizeX, BlockSizeX>>>(corr, stack, corr_size, stack_shift);
+  cuda::synchronize("stack");
 }
 
 /* cuda: AbsSubsMADKernel() */
