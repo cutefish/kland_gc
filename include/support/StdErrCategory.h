@@ -97,6 +97,8 @@ class StdErrCategory : public ErrorCategory {
  public:
   typedef errc::StdErrEnum type;
 
+  StdErrCategory() { }
+
   virtual const char* name() const {
     return "std_error";
   }

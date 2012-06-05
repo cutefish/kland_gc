@@ -30,15 +30,21 @@ const Category& getErrorCategory() {
 /* UnknownErrorCategory */
 
 class UnknownErrorCategory : public ErrorCategory {
+ public:
   typedef enum UnknownError {
-    Unknown,
+    Unknown
   } type;
+
+  UnknownErrorCategory() { }
 
   inline virtual const char* name() const {
     return "UnknownErrorCategory";
   }
 
+  template<typename T> void ignore(const T&) const { }
+
   inline virtual std::string message(int ev) const {
+    ignore<int>(ev); //suppress never used warning;
     return "Unknown error";
   }
 }; // end UnknownErrorCategory

@@ -43,7 +43,7 @@ inline const char *Exception ::what(void) const throw() {
   std::string m_what;
   try
   {
-    m_what = m_error_code.message();
+    m_what = m_error_code.message() + ">>";
     m_what += this->std::runtime_error::what();
   }
   catch(...)

@@ -25,6 +25,7 @@ inline HandlerRef& HandlerRef::operator= (const HandlerRef& ref) {
   if (num_refs == 0) { delete m_ptr; }
   m_ptr = ref.m_ptr;
   m_ptr->incRef();
+  return *this;
 }
 
 inline HandlerRef::~HandlerRef() {
@@ -63,6 +64,7 @@ inline void Handler::emit(std::string message) {
     //using lock to make thread safety
     Lock lock(m_mtx);
     (*m_out) << message;
+    (*m_out).flush();
     //unlocked automatically;
   }
 }
@@ -127,6 +129,7 @@ inline FileHandler::FileHandler(const std::string file_name)
   : m_name(file_name) 
 {
   std::ofstream* f_ = new std::ofstream;
+  errno = 0;
   f_->open(file_name.c_str());
   if (errno) {
     throw Exception(errno, getErrorCategory<StdErrCategory>(),

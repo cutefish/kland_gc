@@ -74,7 +74,7 @@ __global__ void CorrKernel(float* corr, float* temp, float* cont,
     float sx = temp_var;
     float sy = cont_var[i];
     float sxy = 0;
-    if (sx < 1.0e-5 || sy < 1.0e-5) {
+    if (sx < 1.0e-5f || sy < 1.0e-5f) {
       corr[i] = 0;
     }
     else {
@@ -102,7 +102,7 @@ void calcCorr(float* corr, float* temp, float* cont,
 
 /* cuda: StackKernel() */
 __global__ void StackKernel(float* corr, float* stack,
-                            unsigned corr_size, unsigned stack_shift) {
+                            size_t corr_size, int stack_shift) {
   unsigned idx_shift = gridDim.x * blockDim.x;
   unsigned idx_offset = blockDim.x * blockIdx.x + threadIdx.x;
   for (int i = idx_offset; i < corr_size; i += idx_shift) {
@@ -114,13 +114,13 @@ __global__ void StackKernel(float* corr, float* stack,
     //max(corr[i], corr[i+1])
     if (i < corr_size - 1) max = (max > corr[i + 1]) ? max : corr[i + 1];
     //add to stack;
-    if (i - stack_shift > 0) stack[i - stack_shift] += max;
+    if ((i - stack_shift) >= 0) stack[i - stack_shift] += max;
   }
 }
 
 /* stack() */
 void stack(float* corr, float* stack, 
-           unsigned corr_size, unsigned stack_shift) {
+           size_t corr_size, int stack_shift) {
   StackKernel<<<GridSizeX, BlockSizeX>>>(corr, stack, corr_size, stack_shift);
   cuda::synchronize("stack");
 }

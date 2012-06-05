@@ -3,6 +3,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <sstream>
+#include <iostream>
 
 #include "cuda/Runtime.h"
 #include "support/Type.h"
@@ -46,9 +47,9 @@ RunEnv init(Config cfg) {
   cuda::setDevice(env.dev_rank);
 
   //calculate and allocate memory
-  size_t capacity = env.dev_prop->globalMemorySize();
+  size_t capacity = env.dev_prop->globalMemorySize() * 0.8;
   size_t left;
-  size_t cont_req;
+  size_t temp_req, cont_req;
   ///device: one continuous waveform at a time
   temp_req = cfg.temp_npts() * sizeof(float);
   cont_req = cfg.cont_npts() * sizeof(float);
@@ -146,6 +147,8 @@ void finalize(RunEnv env) {
 std::list<TaskRange> partition(int num_proc, int tseg_size, 
                                int num_temp, int num_cont) {
   int cseg_size = num_cont / num_proc;
+  tseg_size = ((num_temp / num_proc) > tseg_size) ? 
+      (num_temp / num_proc) : tseg_size;
   cseg_size = (cseg_size == 0) ? 1 : cseg_size;
   std::list<TaskRange> ret;
   for (int i = 0; i < num_temp; i += tseg_size) {
@@ -345,8 +348,8 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
 
         //calculate stack shift
         //if it is less than zero, discard.
-        int stack_shift = rint(temp_cfg.t - cfg.temp_tbefore() -
-                               cont_cfg.b) / temp_cfg.delta;
+        int stack_shift = rint((temp_cfg.t - cfg.temp_tbefore() -
+                               cont_cfg.b) / temp_cfg.delta);
         if (stack_shift < 0) {
           std::stringstream ss;
           ss << "Stack shift less than zero: \n";
@@ -430,8 +433,11 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       support::TimingSys::restartEvent("select");
       // the select size cont_npts is the largest of all channels
       // min(cfg.npts(), real npts)
-      select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
-             cfg.sample_rate(), valid_channels[ti], ofs);
+      std::cout << mad << '\n';
+      std::cout << cfg.mad_ratio() << '\n';
+      std::cout << mad * cfg.mad_ratio() << '\n';
+//      select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
+//             cfg.sample_rate(), valid_channels[ti], ofs);
       support::TimingSys::pauseEvent("select");
 
     }

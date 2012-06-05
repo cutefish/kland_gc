@@ -64,12 +64,13 @@ inline void Logger::log(const Level lvl, const std::string& message) {
 /* Logger::addHandler() */
 inline void Logger::addHandler(const HandlerRef& hdlr, 
                                const std::string& name) {
-//  if (name == "") m_handlers[Type2String<int>(m_handlers.size())] = hdlr;
-//  m_handlers[name] = hdlr;
-  if (name == "") 
+  if (name == "") {
     m_handlers.insert(std::pair<std::string, HandlerRef>(
             Type2String<int>(m_handlers.size()), hdlr));
+  }
+  else {
     m_handlers.insert(std::pair<std::string, HandlerRef>(name, hdlr));
+  }
 }
 
 /* Logger::removeHandler() */

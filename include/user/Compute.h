@@ -24,14 +24,19 @@ void getContMeanVar(float* data, unsigned size, unsigned window_size,
  */
 void clearDevData(float* data, unsigned size);
 
-/* calcAndStackCorr()
- * Calculate and stack the correlation result.
+/* calcCorr()
+ * Calculate correlation.
  */
-void calcAndStackCorr(float* cont, float* temp, 
-                      unsigned cont_size, unsigned temp_size,
-                      float temp_mean, float temp_var, 
-                      float* cont_mean, float* cont_var, 
-                      float* result);
+void calcCorr(float* corr, float* temp, float* cont,
+              unsigned cont_size, unsigned temp_size,
+              float temp_mean, float temp_var,
+              float* cont_mean, float* cont_var);
+
+/* stack()
+ * Stack correlation
+ */
+void stack(float* corr, float* stack, 
+           size_t corr_size, int stack_shift);
 
 /* getMAD()
  * calculate the mad value 

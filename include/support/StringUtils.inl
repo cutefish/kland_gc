@@ -13,13 +13,14 @@ inline std::vector<std::string> splitString(std::string s, char delim) {
   while(getline(ss, token, delim)) {
     if (token != "") tokens.push_back(token);
   }
+  return tokens;
 }
 
 /* replaceString() */
 inline void replaceString(std::string& original,
                           const std::string& find,
                           const std::string& replace,
-                          const unsigned& maxreplace) {
+                          const int& maxreplace) {
   unsigned num_replaced = 0;
   size_t pos = 0;
   while (true) {

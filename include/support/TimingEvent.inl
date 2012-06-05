@@ -26,6 +26,7 @@ inline Time TimingEvent::tot_dur() const {
 }
 inline Time TimingEvent::run_dur() const { return m_duration; }
 inline Time TimingEvent::ave_dur() const {
+  if (m_num_pauses == 0) return Time(0, 0);
   return devideTime(m_duration, m_num_pauses);
 }
 

@@ -147,7 +147,7 @@ class ErrorCode
 
 /*! \return <tt>lhs.category() < rhs.category() || lhs.category() == rhs.category() && lhs.value() < rhs.value()</tt>.
  */
-inline bool operator<(const ErrorCode &lhs, const ErrorCode &rhs);
+bool operator<(const ErrorCode &lhs, const ErrorCode &rhs);
 
 
 /*! Effects: <tt>os << ec.category().name() << ':' << ec.value()</tt>.
@@ -166,7 +166,7 @@ bool operator==(const ErrorCode &lhs, const ErrorCode &rhs);
 
 /*! \return <tt>!(lhs == rhs)</tt>
  */
-inline bool operator!=(const ErrorCode &lhs, const ErrorCode &rhs);
+bool operator!=(const ErrorCode &lhs, const ErrorCode &rhs);
 
 } /* namespace support */
 

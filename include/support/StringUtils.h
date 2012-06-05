@@ -22,7 +22,7 @@ std::vector<std::string> splitString(std::string s, char delim);
 void replaceString(std::string& original,
                    const std::string& find,
                    const std::string& replace,
-                   const unsigned& maxreplace=-1);
+                   const int& maxreplace=-1);
 
 } /* namespace support */
 
