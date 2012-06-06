@@ -14,7 +14,7 @@ inline TimingEvent::TimingEvent() :
 
 inline TimingEvent::TimingEvent(std::string name) : 
     m_name(name), m_start(), m_end(), 
-    m_duration(), m_num_pauses(0), m_isrunning(false) { }
+    m_duration(), m_num_pauses(0), m_isrunning(false), m_isend(false) { }
 
 /* getter/setter */
 inline const std::string& TimingEvent::name() const { return m_name; }

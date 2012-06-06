@@ -9,7 +9,9 @@ CCLDFLAGS = -lm -lrt -lmpi_cxx
 AR = ar
 RANLIB = ranlib
 LDFLAGS = 
-CC = mpicc
-CXX = mpic++
+MPICC = mpicc
+MPICXX = mpic++
+CC = gcc
+CXX = g++
 NVCC = nvcc
 

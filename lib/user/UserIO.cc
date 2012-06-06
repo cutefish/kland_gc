@@ -10,7 +10,8 @@
 
 /* helper function, isSpecial() */
 bool isSpecial(std::string path, Config cfg) {
-  return path.find(cfg.special_channel()) != std::string::npos;
+  bool ret = path.find(cfg.special_channel()) != std::string::npos;
+  return ret;
 }
 
 /* readTemplate() */
@@ -74,4 +75,10 @@ float readSNR(std::string path, std::string channel) {
     user::throwError(0, usererr::file_not_open, path);
   }
   return 0;
+}
+
+/* dumpResult() */
+void dumpResult(std::string path, float* data, size_t npts) {
+  SacOutput result(path);
+  result.write((char*)data, npts * sizeof(float));
 }

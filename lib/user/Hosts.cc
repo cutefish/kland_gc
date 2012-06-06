@@ -90,6 +90,7 @@ RunEnv init(Config cfg) {
   support::TimingSys::newEvent("readTemplate");
   support::TimingSys::newEvent("calcTemplateMeanVar");
   support::TimingSys::newEvent("readContinuous");
+  support::TimingSys::newEvent("copyContinuous");
   support::TimingSys::newEvent("calcContinuousMeanVar");
   support::TimingSys::newEvent("calcCorr");
   support::TimingSys::newEvent("stackCorr");
@@ -288,8 +289,10 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         continue;
       }
       //copy to device
+      support::TimingSys::restartEvent("copyContinuous");
       cuda::memcpyH2D(env.dev_pCont, env.host_pCont, 
                       cont_cfg.npts * sizeof(float));
+      support::TimingSys::pauseEvent("copyContinuous");
       //calculate mean and var
       support::TimingSys::restartEvent("calcContinuousMeanVar");
       getContMeanVar(env.dev_pCont, cont_cfg.npts, cfg.temp_npts(),
@@ -348,8 +351,9 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
 
         //calculate stack shift
         //if it is less than zero, discard.
-        int stack_shift = rint((temp_cfg.t - cfg.temp_tbefore() -
-                               cont_cfg.b) / temp_cfg.delta);
+        //int stack_shift = rint((temp_cfg.t - cfg.temp_tbefore() -
+        //                       cont_cfg.b) / temp_cfg.delta);
+        int stack_shift = rint((temp_cfg.t - cfg.temp_tbefore()) / temp_cfg.delta);
         if (stack_shift < 0) {
           std::stringstream ss;
           ss << "Stack shift less than zero: \n";
@@ -375,6 +379,17 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
         calcCorr(env.dev_pCorr, env.dev_pTemp, env.dev_pCont,
                  cont_cfg.npts, cfg.temp_npts(),
                  mean, var, env.dev_pContMean, env.dev_pContVar);
+#if 0
+        //dump correlation
+        cuda::memcpyD2H(env.host_pCont, env.dev_pCorr, 
+                        cfg.cont_npts() * sizeof(float));
+        mkdir((cfg.out_root() + "/" + 
+              support::splitString(temp_name, '/').back()).c_str(), 0777);
+        std::string dump_path = cfg.out_root() + "/" + 
+            support::splitString(temp_name, '/').back() + "/" + 
+            support::splitString(cont_name, '/').back() + "_" + chnl_name;
+        dumpResult(dump_path, env.host_pCont, cfg.cont_npts());
+#endif 
         support::TimingSys::pauseEvent("calcCorr");
         //stack correlation
         //note: cont_cfg.npts has the smaller of config and real npts,
@@ -384,6 +399,16 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
               env.dev_pStack + (ti - range.temp_start) * cfg.cont_npts(),
               cont_cfg.npts - cfg.temp_npts(), stack_shift);
         support::TimingSys::pauseEvent("stackCorr");
+#if 0
+        //dump stack
+        cuda::memcpyD2H(env.host_pCont, 
+                        env.dev_pStack + (ti - range.temp_start) * cfg.cont_npts(),
+                        cfg.cont_npts() * sizeof(float));
+        dump_path = cfg.out_root() + "/" + 
+            support::splitString(temp_name, '/').back() + "/" + 
+            support::splitString(cont_name, '/').back() + "_stack";
+        dumpResult(dump_path, env.host_pCont, cfg.cont_npts());
+#endif 
       }
     }
 
@@ -412,7 +437,9 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
                       cfg.cont_npts() * sizeof(float));
       //get MAD
       support::TimingSys::restartEvent("calcMAD");
-      float mad = getMAD(env.dev_pStack, cfg.cont_npts());
+      float mad = getMAD(env.dev_pStack + 
+                         (ti - range.temp_start) * cfg.cont_npts(), 
+                         cfg.cont_npts());
       support::TimingSys::pauseEvent("calcMAD");
 
       //get path
@@ -433,11 +460,8 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       support::TimingSys::restartEvent("select");
       // the select size cont_npts is the largest of all channels
       // min(cfg.npts(), real npts)
-      std::cout << mad << '\n';
-      std::cout << cfg.mad_ratio() << '\n';
-      std::cout << mad * cfg.mad_ratio() << '\n';
-//      select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
-//             cfg.sample_rate(), valid_channels[ti], ofs);
+      select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
+             cfg.sample_rate(), valid_channels[ti], ofs);
       support::TimingSys::pauseEvent("select");
 
     }

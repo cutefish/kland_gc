@@ -25,4 +25,7 @@ DataConfig readContinuous(std::string path, Config cfg, float* data);
  */
 float readSNR(std::string path, std::string channel);
 
+/* dumpResult() */
+void dumpResult(std::string path, float* data, size_t size);
+
 #endif /* USER_USERIO_H_ */

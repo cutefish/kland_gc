@@ -106,13 +106,14 @@ __global__ void StackKernel(float* corr, float* stack,
   unsigned idx_shift = gridDim.x * blockDim.x;
   unsigned idx_offset = blockDim.x * blockIdx.x + threadIdx.x;
   for (int i = idx_offset; i < corr_size; i += idx_shift) {
-    float max = -2;
-    //if exists corr[i-1]
-    if (i > 0) max = corr[i - 1];
-    //max(corr[i-1], corr[i])
-    max = (max > corr[i]) ? max : corr[i];
-    //max(corr[i], corr[i+1])
-    if (i < corr_size - 1) max = (max > corr[i + 1]) ? max : corr[i + 1];
+//    float max = -2;
+    float max = corr[i];
+//    //if exists corr[i-1]
+//    if (i > 0) max = corr[i - 1];
+//    //max(corr[i-1], corr[i])
+//    max = (max > corr[i]) ? max : corr[i];
+//    //max(corr[i], corr[i+1])
+//    if (i < corr_size - 1) max = (max > corr[i + 1]) ? max : corr[i + 1];
     //add to stack;
     if ((i - stack_shift) >= 0) stack[i - stack_shift] += max;
   }
@@ -125,8 +126,8 @@ void stack(float* corr, float* stack,
   cuda::synchronize("stack");
 }
 
-/* cuda: AbsSubsMADKernel() */
-__global__ void AbsSubsMADKernel(float* data, unsigned size, float* median) {
+/* cuda: AbsSubsMEDKernel() */
+__global__ void AbsSubsMEDKernel(float* data, unsigned size, float* median) {
   unsigned shift = gridDim.x * blockDim.x;
   unsigned offset = blockDim.x * blockIdx.x + threadIdx.x;
   for (int i = offset; i < size; i += shift) {
@@ -144,8 +145,8 @@ float getMAD(float* data, unsigned size) {
   float* median = reinterpret_cast<float*>(cuda::malloc(sizeof(float)));
   cuda::memcpyD2D(median, data + size / 2, sizeof(float), "getMAD");
   //abs(data[i] - median)
-  AbsSubsMADKernel<<<GridSizeX, BlockSizeX>>>(data, size, median);
-  cuda::synchronize("AbsSubsMADKernel");
+  AbsSubsMEDKernel<<<GridSizeX, BlockSizeX>>>(data, size, median);
+  cuda::synchronize("AbsSubsMEDKernel");
   //sort again
   thrust::sort(dev_data, dev_data + size);
   cuda::synchronize("thrust_sort2");
@@ -162,7 +163,7 @@ void select(float* data, unsigned size,
             float mad, float ratio, 
             float sample_rate, unsigned num_valid_channel, 
 			std::ofstream& out) {
-  out << "mad value: " << mad << '\n';
+  out << "mad value: " << mad / num_valid_channel << '\n';
   for (int i = 0; i < size; ++i) {
     if (data[i] > (mad * ratio)) {
       std::stringstream ss;
