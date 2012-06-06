@@ -463,7 +463,6 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
              cfg.sample_rate(), valid_channels[ti], ofs);
       support::TimingSys::pauseEvent("select");
-
     }
 
     first_temp_loop = false;
