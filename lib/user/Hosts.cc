@@ -148,8 +148,9 @@ void finalize(RunEnv env) {
 std::list<TaskRange> partition(int num_proc, int tseg_size, 
                                int num_temp, int num_cont) {
   int cseg_size = num_cont / num_proc;
-  tseg_size = ((num_temp / num_proc) > tseg_size) ? 
+  tseg_size = ((num_temp / num_proc) < tseg_size) ? 
       (num_temp / num_proc) : tseg_size;
+
   cseg_size = (cseg_size == 0) ? 1 : cseg_size;
   std::list<TaskRange> ret;
   for (int i = 0; i < num_temp; i += tseg_size) {
@@ -399,18 +400,22 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
               env.dev_pStack + (ti - range.temp_start) * cfg.cont_npts(),
               cont_cfg.npts - cfg.temp_npts(), stack_shift);
         support::TimingSys::pauseEvent("stackCorr");
-#if 0
-        //dump stack
-        cuda::memcpyD2H(env.host_pCont, 
-                        env.dev_pStack + (ti - range.temp_start) * cfg.cont_npts(),
-                        cfg.cont_npts() * sizeof(float));
-        dump_path = cfg.out_root() + "/" + 
-            support::splitString(temp_name, '/').back() + "/" + 
-            support::splitString(cont_name, '/').back() + "_stack";
-        dumpResult(dump_path, env.host_pCont, cfg.cont_npts());
-#endif 
       }
     }
+
+#if 0
+    for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
+      //dump stack
+      std::string temp_name = cfg.temp_list()[ti];
+      cuda::memcpyD2H(env.host_pCont, 
+                      env.dev_pStack + (ti - range.temp_start) * cfg.cont_npts(),
+                      cfg.cont_npts() * sizeof(float));
+      std::string dump_path = cfg.out_root() + "/" + 
+          support::splitString(temp_name, '/').back() + "/" + 
+          support::splitString(cont_name, '/').back() + "_stack";
+      dumpResult(dump_path, env.host_pCont, cfg.cont_npts());
+    }
+#endif 
 
     //select
     for (int ti = range.temp_start; ti < range.temp_end + 1; ++ti) {
@@ -461,7 +466,7 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
       // the select size cont_npts is the largest of all channels
       // min(cfg.npts(), real npts)
       select(env.host_pCont, max_cont_npts, mad, cfg.mad_ratio(),
-             cfg.sample_rate(), valid_channels[ti], ofs);
+             cfg.sample_rate(), valid_channels[ti - range.temp_start], ofs);
       support::TimingSys::pauseEvent("select");
     }
 

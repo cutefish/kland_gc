@@ -24,6 +24,8 @@ DeviceProperties::DeviceProperties(const unsigned deviceID) {
   m_totalConstantMemory = dev_prop->totalConstMem;
   m_totalMemBytes = dev_prop->totalGlobalMem;
   m_textureAlign = dev_prop->textureAlignment;
+  m_pciDeviceID = dev_prop->pciBusID * 10000 + 
+      dev_prop->pciDeviceID * 100 + dev_prop->pciDomainID;
 }
 
 /* getter/setter */
@@ -67,6 +69,9 @@ int DeviceProperties::capabilityMinor() const {
 }
 int DeviceProperties::numMultiProcessors() const { 
 	return m_multiProcessorCount; 
+}
+int DeviceProperties::pciDeviceID() const {
+  return m_pciDeviceID;
 }
 
 } /* namespace cuda */

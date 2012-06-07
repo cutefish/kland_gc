@@ -35,6 +35,7 @@ class DeviceProperties
   int capabilityMajor() const;
   int capabilityMinor() const;
   int numMultiProcessors() const;
+  int pciDeviceID() const;
  private:
   /// The name of the device.
   std::string m_name;
@@ -66,6 +67,8 @@ class DeviceProperties
   size_t m_totalMemBytes;
   /// The alignment requirements for textures in memory.
   size_t m_textureAlign;
+  /// The PCI device ID.
+  int m_pciDeviceID;
 };
 
 } /* namespace cuda */
