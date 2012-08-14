@@ -136,7 +136,8 @@ __global__ void AbsSubsMEDKernel(float* data, unsigned size, float* median) {
 }
 
 /* getMAD() */
-float getMAD(float* data, unsigned size) {
+float* getMAD(float* data, unsigned size) {
+  float* ret = new float[2];
   //sort first
   thrust::device_ptr<float> dev_data(data);
   thrust::sort(dev_data, dev_data + size);
@@ -144,6 +145,7 @@ float getMAD(float* data, unsigned size) {
   //get median
   float* median = reinterpret_cast<float*>(cuda::malloc(sizeof(float)));
   cuda::memcpyD2D(median, data + size / 2, sizeof(float), "getMAD");
+  cuda::memcpyD2H((void*)(&ret[0]), median, sizeof(float), "getMAD");
   //abs(data[i] - median)
   AbsSubsMEDKernel<<<GridSizeX, BlockSizeX>>>(data, size, median);
   cuda::synchronize("AbsSubsMEDKernel");
@@ -151,21 +153,22 @@ float getMAD(float* data, unsigned size) {
   thrust::sort(dev_data, dev_data + size);
   cuda::synchronize("thrust_sort2");
   //get mad result
-  float mad;
-  cuda::memcpyD2H((void*)&mad, data + size / 2, sizeof(float), "getMAD");
+  cuda::memcpyD2H((void*)(&ret[1]), data + size / 2, sizeof(float), "getMAD");
   //clean up
   cuda::free(median);
-  return mad;
+  return ret;
 }
 
 /* select() */
 void select(float* data, unsigned size, 
-            float mad, float ratio, 
+            float* mad, float ratio, 
             float sample_rate, unsigned num_valid_channel, 
 			std::ofstream& out) {
-  out << "mad value: " << mad / num_valid_channel << '\n';
+  out << "median value: " << mad[0] / num_valid_channel << '\n';
+  out << "mad value: " << mad[1] / num_valid_channel << '\n';
+  float mad_value = mad[0] + ratio * mad[1];
   for (int i = 0; i < size; ++i) {
-    if (data[i] > (mad * ratio)) {
+    if (data[i] > mad_value) {
       std::stringstream ss;
       float time = static_cast<float>(i) / sample_rate;
       float corr = data[i] / num_valid_channel;

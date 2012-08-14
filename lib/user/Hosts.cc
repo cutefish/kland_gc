@@ -442,7 +442,7 @@ void doWork(RunEnv env, Config cfg, TaskRange range) {
                       cfg.cont_npts() * sizeof(float));
       //get MAD
       support::TimingSys::restartEvent("calcMAD");
-      float mad = getMAD(env.dev_pStack + 
+      float* mad = getMAD(env.dev_pStack + 
                          (ti - range.temp_start) * cfg.cont_npts(), 
                          cfg.cont_npts());
       support::TimingSys::pauseEvent("calcMAD");

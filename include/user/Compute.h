@@ -41,13 +41,13 @@ void stack(float* corr, float* stack,
 /* getMAD()
  * calculate the mad value 
  */
-float getMAD(float* data, unsigned size);
+float* getMAD(float* data, unsigned size);
 
 /* select()
  * Select points exceeds mad and output.
  */
 void select(float* data, unsigned size, 
-            float mad, float ratio, 
+            float* mad, float ratio, 
             float sample_rate, unsigned num_valid_channel, 
             std::ofstream& out);
 
